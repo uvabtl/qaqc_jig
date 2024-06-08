@@ -320,7 +320,7 @@ def take_data():
     dLcm_perstep= float(stepper_dLperstep.get()) # default=0.005
     nstep_intermodule = dLcm_intermodule/dLcm_perstep
     nstep_interboard = dLcm_interboard/dLcm_perstep
-    list_nstep = [ 0,                 # board 0, module 0
+    list_nstep_old = [ 0,                 # board 0, module 0
                    1*nstep_intermodule, # board 0, module 1
                    2*nstep_intermodule, # board 0, module 2
                    1*nstep_interboard + 2*nstep_intermodule,  # board 1, module 0
@@ -333,6 +333,20 @@ def take_data():
                    3*nstep_interboard + 7*nstep_intermodule, # board 3, module 1
                    3*nstep_interboard + 8*nstep_intermodule, # board 3, module 2
                 ]
+    list_nstep= [ 0,                 # board 0, module 0
+                   nstep_intermodule, # board 0, module 1
+                   nstep_intermodule, # board 0, module 2
+                   nstep_interboard,  # board 1, module 0
+                   nstep_intermodule, # board 1, module 1
+                   nstep_intermodule, # board 1, module 2
+                   nstep_interboard,  # board 2, module 0
+                   nstep_intermodule, # board 2, module 1
+                   nstep_intermodule, # board 2, module 2
+                   nstep_interboard,  # board 3, module 0
+                   nstep_intermodule, # board 3, module 1
+                   nstep_intermodule, # board 3, module 2
+                ]
+
     
     # Make sure they entered the barcodes first.
     for i in range(12):
@@ -434,7 +448,10 @@ def take_data():
                 pass
             else:
                 try:
-                    query(client, "step %i" % (list_nstep[i] - list_nstep[step_lastposition]), 600)
+                    #query(client, "step %i" % (list_nstep[i] - list_nstep[step_lastposition]), 3000)
+                    for j in range(step_lastposition +1, i+1):
+                        query(client, "step %i" % list_nstep[j], 600)
+                        print("step %i done" % j)
                 except Exception as e:
                     print_warning(str(e)+" step")
                     return
