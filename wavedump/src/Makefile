@@ -1,8 +1,8 @@
 release_hdr := $(shell sh -c './mkreleasehdr.sh')
 
 OPTIMIZATION?=-O2
-CFLAGS=$(OPTIMIZATION) -Wall -g
-CFLAGS+= -fPIC -DLINUX
+CFLAGS=$(OPTIMIZATION) -Wall -g -std=gnu99
+CFLAGS+= -fPIC -DLINUX -std=gnu99
 
 LDLIBS=-lCAENComm -lCAENDigitizer -lm -lpthread -lhdf5
 
@@ -19,7 +19,7 @@ Makefile.dep:
 
 -include Makefile.dep
 
-wavedump: wavedump.o fft.o flash.o  keyb.o  spi.o WDconfig.o  WDplot.o  X742CorrectionRoutines.o release.o
+wavedump: wavedump.o fft.o flash.o  keyb.o  spi.o WDconfig.o  X742CorrectionRoutines.o release.o
 
 install: all
 	@mkdir -p $(INSTALL_BIN)

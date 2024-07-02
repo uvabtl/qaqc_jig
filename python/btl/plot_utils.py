@@ -125,10 +125,13 @@ def plot_graph(g, path=None, filename=None, xMin=-1., xMax=32., yMin=-1., yMax=-
     hPad.SetTitle(";%s;%s"%(g.GetXaxis().GetTitle(),g.GetYaxis().GetTitle()))
     hPad.Draw()
     g.Draw('PL,same')
-    if mean!= 0:
-        latex = ROOT.TLatex( 0.20, 0.90, 'mean = %.2e, RMS = %.1f%%'%(mean,rms/mean*100.))
+    if mean!=0:
+        lab = 'mean = %.2e, RMS = %.1f%%'%(mean,rms/mean*100.)
     else:
-        latex = ROOT.TLatex( 0.20, 0.90, 'mean = %.2e'%(mean))        
+        lab = 'mean = %.2e, RMS = %.1f'%(mean,rms)
+    
+    latex = ROOT.TLatex( 0.20, 0.90,lab)
+    #latex = ROOT.TLatex( 0.20, 0.90, 'mean = %.2e, RMS = %.1f%%'%(mean,rms/mean*100.))
     latex.SetNDC()
     latex.SetTextSize(0.050)
     latex.SetTextColor(ROOT.kBlack)
@@ -177,17 +180,35 @@ def plot_graph_bars(g_L, g_R, g_A, path=None, filename=None, graphname='graph', 
     g_L.Draw('PL,same')
     g_R.Draw('PL,same')
     g_A.Draw('PL,same') 
-    latex_L = ROOT.TLatex( 0.20, 0.90, '  left side:   mean = %.2e, RMS = %.1f%%'%(mean_L,rms_L/mean_L*100.))
+    if mean_L!=0:
+        label_L = '  left side:   mean = %.2e, RMS = %.1f%%'%(mean_L,rms_L/mean_L*100.)
+    else:
+        label_L = '  left side:   mean = %.2e, RMS = %.1f'%(mean_L,rms_L) 
+
+    if mean_R!=0:
+        label_R = 'right side:   mean = %.2e, RMS = %.1f%%'%(mean_R,rms_R/mean_R*100.)
+    else:
+        label_R = 'right side:   mean = %.2e, RMS = %.1f'%(mean_R,rms_R) 
+
+    if mean_A!=0:
+        label_A = 'average:   mean = %.2e, RMS = %.1f%%'%(mean_A,rms_A/mean_A*100.)
+    else:
+        label_A = 'average:   mean = %.2e, RMS = %.1f'%(mean_A,rms_A) 
+
+    latex_L = ROOT.TLatex( 0.20, 0.90, label_L)
+    latex_R = ROOT.TLatex( 0.20, 0.85, label_R)
+    latex_A = ROOT.TLatex( 0.20, 0.80, label_A)  
+    #latex_L = ROOT.TLatex( 0.20, 0.90, '  left side:   mean = %.2e, RMS = %.1f%%'%(mean_L,rms_L/mean_L*100.))
     latex_L.SetNDC()
     latex_L.SetTextSize(0.050)
     latex_L.SetTextColor(ROOT.kRed)
     latex_L.Draw()
-    latex_R = ROOT.TLatex( 0.20, 0.85, 'right side:   mean = %.2e, RMS = %.1f%%'%(mean_R,rms_R/mean_R*100.))
+    #latex_R = ROOT.TLatex( 0.20, 0.85, 'right side:   mean = %.2e, RMS = %.1f%%'%(mean_R,rms_R/mean_R*100.))
     latex_R.SetNDC()
     latex_R.SetTextSize(0.050)
     latex_R.SetTextColor(ROOT.kBlue)
     latex_R.Draw()
-    latex_A = ROOT.TLatex( 0.20, 0.80, 'average:   mean = %.2e, RMS = %.1f%%'%(mean_A,rms_A/mean_A*100.))
+    #latex_A = ROOT.TLatex( 0.20, 0.80, 'average:   mean = %.2e, RMS = %.1f%%'%(mean_A,rms_A/mean_A*100.))
     latex_A.SetNDC()
     latex_A.SetTextSize(0.050)
     latex_A.SetTextColor(ROOT.kBlack)

@@ -22,7 +22,8 @@ canvas = []
 ATTENUATION_FACTOR = 5.85
 
 # Radioactive sources with their gamma energies in keV.
-SOURCES = {'lyso': 307, 'sodium': 511, 'cesium': 662, 'cobalt': 122}
+#SOURCES = {'lyso': 307, 'sodium': 511, 'cesium': 662, 'cobalt': 122}
+SOURCES = {'lyso': 662, 'sodium': 511, 'cesium': 662, 'cobalt': 122}
 
 
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     import psycopg2
     import psycopg2.extensions
     from btl import fit_spe_funcs
-    from btl import fit_lyso_funcs
+    #from btl import fit_lyso_funcs
     from btl import fit_gamma_funcs
     from btl import fit_intrinsic_funcs
     from btl import plot_utils
@@ -67,9 +68,14 @@ if __name__ == '__main__':
         # Disables the canvas from ever popping up
         gROOT.SetBatch()
     
+
+    if args.print_pdfs:
+       if not os.path.exists(args.print_pdfs):
+       	  os.makedirs(args.print_pdfs)
     
     #------------------------------
     # open hdf5 file with integrals
+    print("Opening hdf5 file...")
     data = {}
     ch_data = {}
     source = None
@@ -554,7 +560,7 @@ if __name__ == '__main__':
     g_lyso_pc_per_kev_raw_vs_ch.SetTitle(f"LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
     g_lyso_pc_per_kev_raw_vs_ch.SetName("g_lyso_pc_per_kev_raw_vs_ch")
     g_lyso_pc_per_kev_raw_vs_ch.Write()
-    plot_utils.plot_graph(g_lyso_pc_per_kev_raw_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=3.)
+    plot_utils.plot_graph(g_lyso_pc_per_kev_raw_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=4.)
     
     g_lyso_pc_per_kev_vs_ch.SetTitle(f"LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
     g_lyso_pc_per_kev_vs_ch.SetName("g_lyso_pc_per_kev_vs_ch")
@@ -564,7 +570,7 @@ if __name__ == '__main__':
     g_spe_vs_ch.SetTitle("SPE Fit Results; Channel; SPE Charge (pC)")
     g_spe_vs_ch.SetName("g_spe_vs_ch")
     g_spe_vs_ch.Write()
-    plot_utils.plot_graph(g_spe_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=6.)
+    plot_utils.plot_graph(g_spe_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=8.)
     
     g_light_yield_vs_ch.SetTitle("Light Yield; Channel; Light Yield (p.e./MeV)")
     g_light_yield_vs_ch.SetName("g_light_yield_vs_ch")
@@ -579,7 +585,7 @@ if __name__ == '__main__':
     g_R_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
     g_R_lyso_pc_per_kev_raw_vs_bar.SetName("g_lyso_R_pc_per_kev_raw_vs_bar")
     g_R_lyso_pc_per_kev_raw_vs_bar.Write()    
-    plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_raw_vs_bar, g_R_lyso_pc_per_kev_raw_vs_bar, g_avg_lyso_pc_per_kev_raw_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_raw_vs_bar', yMin=0., yMax=3.)
+    plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_raw_vs_bar, g_R_lyso_pc_per_kev_raw_vs_bar, g_avg_lyso_pc_per_kev_raw_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_raw_vs_bar', yMin=0., yMax=4.)
     
     g_L_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
     g_L_lyso_pc_per_kev_vs_bar.SetName("g_lyso_L_pc_per_kev_vs_bar")
@@ -587,7 +593,7 @@ if __name__ == '__main__':
     g_R_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
     g_R_lyso_pc_per_kev_vs_bar.SetName("g_lyso_R_pc_per_kev_vs_bar")
     g_R_lyso_pc_per_kev_vs_bar.Write()    
-    plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_vs_bar, g_R_lyso_pc_per_kev_vs_bar, g_avg_lyso_pc_per_kev_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_vs_bar', yMin=0., yMax=3.)
+    plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_vs_bar, g_R_lyso_pc_per_kev_vs_bar, g_avg_lyso_pc_per_kev_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_vs_bar', yMin=0., yMax=4.)
     
     g_L_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy resolution")
     g_L_lyso_res_vs_bar.SetName("g_lyso_L_peak_res_vs_bar")
@@ -611,7 +617,7 @@ if __name__ == '__main__':
     g_R_spe_vs_bar.SetTitle(f"SPE Fit Results; Bar ID; SPE Charge (pC)")
     g_R_spe_vs_bar.SetName("g_spe_R_vs_bar")
     g_R_spe_vs_bar.Write()    
-    plot_utils.plot_graph_bars(g_L_spe_vs_bar, g_R_spe_vs_bar, g_avg_spe_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_spe_vs_bar', yMin=0., yMax=6.)
+    plot_utils.plot_graph_bars(g_L_spe_vs_bar, g_R_spe_vs_bar, g_avg_spe_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_spe_vs_bar', yMin=0., yMax=8.)
     
     g_L_light_yield_vs_bar.SetTitle(f"Light Yield; Bar ID; Light Yield (p.e./MeV)")
     g_L_light_yield_vs_bar.SetName("g_L_light_yield_vs_bar")

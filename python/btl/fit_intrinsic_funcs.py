@@ -19,6 +19,7 @@ def ROOT_peaks(h, width=10, height=0.05, npeaks=4, options="", sort=True):
     https://root.cern.ch/root/htmldoc/guides/spectrum/Spectrum.html#processing-and-visualization-functions
     """
 
+    maxRange=h.GetBinCenter(h.GetNbinsX()-1)
     h.GetXaxis().SetRangeUser(300.,2000.)
     
     spec = ROOT.TSpectrum(npeaks)
@@ -42,7 +43,7 @@ def ROOT_peaks(h, width=10, height=0.05, npeaks=4, options="", sort=True):
     ind = np.argsort(x_pos)
     x_pos = x_pos[ind]
 
-    h.GetXaxis().SetRangeUser(0.,2000.)
+    h.GetXaxis().SetRangeUser(0.,maxRange)
     
     return (x_pos, highest_peak)
 
@@ -141,7 +142,7 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     nPeaks = 3
 
     h.GetXaxis().SetRangeUser(offset+3*offset_sigma,h.GetBinCenter(h.GetNbinsX()-1))
-    _ ,peak = ROOT_peaks(h,width=15,height=0.3,npeaks=nPeaks,options='nobackground',sort=False)
+    _ ,peak = ROOT_peaks(h,width=10,height=0.3,npeaks=nPeaks,options='nobackground',sort=True)
     if (peak == None): peak = 100
     
     # Now we find the full energy peak. We don't use `GetMaximumBin` because we

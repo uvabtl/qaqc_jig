@@ -9,6 +9,7 @@
 #include <unistd.h> /* for access(). */
 #include <signal.h> /* for SIGINT. */
 #include <sys/statvfs.h>
+#include <linux/limits.h>
 
 #define WF_SIZE 10000
 #define BS_SIZE 10
@@ -420,7 +421,7 @@ void GoToNextEnabledGroup(WaveDumpRun_t *WDrun, WaveDumpConfig_t *WDcfg) {
             printf("Plot group set to %d\n", WDrun->GroupPlotIndex);
         }
     }
-    ClearPlot();
+    //ClearPlot();
 }
 
 /*! \brief   return TRUE if board descriped by 'BoardInfo' supports
@@ -1696,7 +1697,7 @@ WaveDumpConfig_t get_default_settings() {
 
 
     /* Enable all channels. */
-    WDcfg.EnableMask = 0xFF;
+    WDcfg.EnableMask = 0x03;
     
     /* Set to trigger on negative pulses. */
     for (i = 0; i < MAX_SET; i++)
@@ -1953,7 +1954,7 @@ int main(int argc, char *argv[])
     }
 
     /* Open the digitizer. */
-    ret = CAEN_DGTZ_OpenDigitizer(0, 0, 0, 0, &handle);
+    ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, 0, 0, 0xDDDD0000, &handle);
 
     if (ret) {
         fprintf(stderr, "unable to open digitizer! Is it turned on?\n");
@@ -2427,23 +2428,25 @@ int main(int argc, char *argv[])
             }
 
             for (int gr = 0; gr < (WDcfg.Nch/8); gr++) {
+	      if (WDcfg.EnableMask & (1<<gr)) { 
                 if (Event742->GrPresent[gr]) {
-                    for (ch = 0; ch < 8; ch++) {
-                        int Size = Event742->DataGroup[gr].ChSize[ch];
-
-                        if (Size <= 0)
-                            continue;
-
-                        nsamples = Size;
-
-                        for (int j = 0; j < Size; j++) {
-                            wfdata[nread][gr*8 + ch][j] = Event742->DataGroup[gr].DataChannel[ch][j];
-                        }
-                    }
-                } else {
-                    fprintf(stderr, "Warning: missing data for group %i for event %i\n", gr, nread);
+		  for (ch = 0; ch < 8; ch++) {
+		    int Size = Event742->DataGroup[gr].ChSize[ch];
+		    
+		    if (Size <= 0)
+		      continue;
+		    
+		    nsamples = Size;
+		    
+		    for (int j = 0; j < Size; j++) {
+		      wfdata[nread][gr*8 + ch][j] = Event742->DataGroup[gr].DataChannel[ch][j];
+		    }
+		  }
+		} else {
+		  fprintf(stderr, "Warning: missing data for group %i for event %i\n", gr, nread);
                 }
-            }
+	      }
+	    }
             nread += 1;
         }
 	
