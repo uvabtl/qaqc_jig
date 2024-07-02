@@ -52,7 +52,7 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     nPeaks = 3
 
     h.GetXaxis().SetRangeUser(offset+3*offset_sigma,h.GetBinCenter(h.GetNbinsX()-1))
-    _ ,peak = ROOT_peaks(h,width=15,height=0.3,npeaks=nPeaks,options='nobackground')
+    _ ,peak = ROOT_peaks(h,width=10,height=0.2,npeaks=nPeaks,options='nobackground')
     if (peak == None): peak = 100
     
     # Now we find the full energy peak. We don't use `GetMaximumBin` because we
@@ -87,12 +87,12 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     f = ROOT.TF1(f"{h.GetName()}_fit",f"[2]*exp(-0.5*(x-{offset}-[0]*{eng})**2/([1]*{eng})**2)", peak*0.5, peak*1.5)
     sigma = h.GetRMS()
     f.SetNpx(10000)
-    f.SetLineColor(ROOT.kRed)
+    f.SetLineColor(ROOT.kTeal)
     f.SetParameter(0, (peak-offset)/eng)
     f.SetParameter(1, 0.08*peak/eng)
     f.SetParameter(2, h.GetBinContent(h.FindBin(peak)))
-    f.SetParRange(1,0.,100.)
-    r = h.Fit(f, 'QLSB+',  '', 0.85*peak, 1.15*peak)
+    f.SetParLimits(1,0.,100.)
+    r = h.Fit(f, 'Q0LSB',  '', 0.85*peak, 1.15*peak)
     #h.Write()
     
     # Secondary fit that limits the range to +/-1.5 sigma. This makes the model
@@ -107,10 +107,13 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     #f.SetParLimits(2, 0, 2000000)
     r = h.Fit(f, 'QLSB+', '', offset+eng*f.GetParameter(0) - 0.75*eng*abs(f.GetParameter(1)), offset+eng*f.GetParameter(0) + 1.*eng*abs(f.GetParameter(1)))
     f.Write()
-    
-    if not r.Get().IsValid():
-        print('Fit failed')
-        return None
+
+    if 'nullptr' in str(r):
+       print('Fit failed, null pointer')
+       return None
+    #if r.Get().IsValid():
+    #    print('Fit failed') 
+    #    return None  
     
     # Use commented return statement for linear background model because it
     # adds 2 more parameters. 

@@ -5,8 +5,8 @@ GUI for controlling the Caltech BTL QA/QC jig.
 Author: Anthony LaTorre
 Last Updated: Jan 24, 2023
 """
-USE_KEITHLEY = False
-USE_CHILLER = False
+USE_TTi = True
+USE_CHILLER = True
 
 from btl import Client
 import tkinter as tk
@@ -19,8 +19,10 @@ from subprocess import Popen, PIPE
 import subprocess
 import os
 import h5py
-if USE_KEITHLEY:
-   from utilities import keithley2231A
+import sys
+if USE_TTi:
+   sys.path.append('/home/cmsdaq/DAQ/TXP3510P')
+   from TXP3510PWrapper import TXP3510P
    
 WAVEDUMP_PROGRAM = 'wavedump'
 #ANALYZE_WAVEFORMS_PROGRAM = 'analyze-waveforms'
@@ -251,8 +253,17 @@ def power_on():
     Function to power on the board power supply
     """
     
-    mykey = keithley2231A.Keithley2231A()
-    mykey.set_state(1)
+    mytti1 = TXP3510P('/dev/TTi-1')
+    mytti1.setCurrent(2.)
+    mytti1.setVoltage(5.3)
+    mytti1.powerOn()
+    mytti2 = TXP3510P('/dev/TTi-2')
+    mytti2.setCurrent(1.,1)
+    mytti2.setVoltage(12.,1)
+    mytti2.powerOn(1)
+    mytti2.setCurrent(1.,2)
+    mytti2.setVoltage(12.,2)
+    mytti2.powerOn(2)
     
     power_on_button['state'] = tk.DISABLED
     power_off_button['state'] = tk.NORMAL
@@ -262,8 +273,11 @@ def power_off():
     Function to power off the board power supply
     """
     
-    mykey = keithley2231A.Keithley2231A()
-    mykey.set_state(0)
+    mytti1 = TXP3510P('/dev/TTi-1')
+    mytti1.powerOff()
+    mytti2 = TXP3510P('/dev/TTi-2')
+    mytti2.powerOff(1)
+    mytti2.powerOff(2)
     
     power_on_button['state'] = tk.NORMAL
     power_off_button['state'] = tk.DISABLED
@@ -273,9 +287,9 @@ def chiller_on():
     Function to turn on the chiller
     """
     
-    proc = Popen(['python3','/home/cern_user/qaqc_jig_dev/python/utilities/setBoxTemp_PID.py','--target','%f'%(float(chiller_temp_entry.get()))])
+    proc = Popen(['python3','/home/cmsdaq/DAQ/qaqc_jig/python/utilities/setBoxTemp_PID.py','--target','%f'%(float(chiller_temp_entry.get()))])
     chiller_pid = proc.pid
-    os.system('echo %d >> /home/cern_user/.setBoxTemp_PID.pid'%chiller_pid)
+    os.system('echo %d >> /home/cmsdaq/.setBoxTemp_PID.pid'%chiller_pid)
     chiller_on_button.config(text='Chiller is on (PID: %d)'%chiller_pid)
     
     chiller_on_button['state'] = tk.DISABLED
@@ -285,11 +299,13 @@ def chiller_off():
     """
     Function to turn off the chiller
     """
-
+    
+    out = Popen(['cat','/home/cmsdaq/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
+    chiller_pid = int(out.stdout.read().decode().rstrip())
     os.system('kill -9 %d'%chiller_pid)
-    os.system('rm /home/cern_user/.setBoxTemp_PID.pid')
-    out = Popen(['ssh', 'cmsdaq@100.100.100.1', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --power-off'],stdout=subprocess.PIPE)
-
+    os.system('rm /home/cmsdaq/.setBoxTemp_PID.pid')
+    out = Popen(['/home/cmsdaq/DAQ/LAUDAChiller/driveChiller.py', '--power-off'],stdout=subprocess.PIPE)
+    
     chiller_on_button.config(text='Chiller on')
     chiller_on_button['state'] = tk.NORMAL
     chiller_off_button['state'] = tk.DISABLED
@@ -432,6 +448,7 @@ def take_data():
                 return
 
             cmd = [WAVEDUMP_PROGRAM,'-t','self','-l','lyso','--channel-map',j % 2,'-n',n_source_events.get(),'-o',filename,'--threshold',trigger.get()]
+            print_warning(" ".join(str(c) for c in cmd))
             if run_command(cmd, progress_bar=i):
                 hv_off(client)
                 return
@@ -587,11 +604,11 @@ def poll():
             thermistor_text[(i,key)].config(text="%.2f" % value)
 
 def read_dht22():
-    out = Popen(['tail', '-n 1', '/home/cern_user/DHT22Logger/DHTLoggerData.log'],stdout=PIPE)
-    vals = (out.stdout.read().decode('utf-8')).split()
-    for i in range(5):
-        dht22_text[(i,'temp')].config(text="%.1f"%float(vals[2+0+2*i]))
-        dht22_text[(i,'hum')].config(text="%.1f"%float(vals[2+1+2*i]))
+    out = Popen(['ssh', 'cmsdaq@raspcmsroma01', 'tail', '-n 1', '/home/cmsdaq/SHT40/temp.txt'],stdout=PIPE)
+    vals = (out.stdout.read().decode('utf-8')).split(',')
+    for i in range(1):
+        dht22_text[(i,'temp')].config(text="%.1f"%float(vals[0+0+2*i]))
+        dht22_text[(i,'hum')].config(text="%.1f"%float(vals[0+1+2*i]))
     root.after(3000,read_dht22)
 
 def step_home():
@@ -833,31 +850,31 @@ if __name__ == '__main__':
     #stepper_enable_checkbox = tk.Checkbutton(frame_settings, text='Enable Stepper', variable=stepper_enable, onvalue=1, offvalue=0)
     #stepper_enable_checkbox.pack()
     
-    if USE_KEITHLEY:
-        mykey = keithley2231A.Keithley2231A()
-        state = mykey.check_state()
+    if USE_TTi:
+        mytti3 = TXP3510P('/dev/TTi-1')
+        state = mytti3.getState()
         
         power_on_button = tk.Button(master=frame_buttons2,text="Power on", width=25, height=5, command=power_on)
-        if state == 0:
+        if state == '0':
             power_on_button['state'] = tk.NORMAL
         else:
             power_on_button['state'] = tk.DISABLED        
         power_on_button.pack()
         
         power_off_button = tk.Button(master=frame_buttons2,text="Power off", width=25, height=5, command=power_off)
-        if state == 0:
+        if state == '0':
             power_off_button['state'] = tk.DISABLED
         else:
             power_off_button['state'] = tk.NORMAL
         power_off_button.pack()
     
     if USE_CHILLER:
-        out = Popen(['ssh', 'cmsdaq@100.100.100.1', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --check-state'],stdout=subprocess.PIPE)
+        out = Popen(['/home/cmsdaq/DAQ/LAUDAChiller/driveChiller.py', '--check-state'],stdout=subprocess.PIPE)
         state = int(out.stdout.read().decode().rstrip())
-    
+        
         chiller_pid = -1
-        if os.path.isfile('/home/cern_user/.setBoxTemp_PID.pid'):
-            out = Popen(['cat','/home/cern_user/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
+        if os.path.isfile('/home/cmsdaq/.setBoxTemp_PID.pid'):
+            out = Popen(['cat','/home/cmsdaq/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
             chiller_pid = int(out.stdout.read().decode().rstrip())
     
         if chiller_pid == -1:
@@ -869,7 +886,7 @@ if __name__ == '__main__':
         chiller_on_button.pack()
         
         chiller_off_button = tk.Button(master=frame_buttons2,text="Chiller off", width=25, height=5, command=chiller_off)
-        if state == 0:
+        if state == 1:
             chiller_off_button['state'] = tk.DISABLED
         else:
             chiller_off_button['state'] = tk.NORMAL
@@ -882,15 +899,11 @@ if __name__ == '__main__':
         chiller_temp_entry.grid(row=1,column = 0)
         
         tk.Label(frame_temps,text="#1").grid(row=2,column=1)
-        tk.Label(frame_temps,text="#2").grid(row=2,column=2)
-        tk.Label(frame_temps,text="#3").grid(row=2,column=3)
-        tk.Label(frame_temps,text="#4").grid(row=2,column=4)
-        tk.Label(frame_temps,text="#5").grid(row=2,column=5)
         tk.Label(frame_temps,text="temp. (° C)").grid(row=3,column=0)
         tk.Label(frame_temps,text=" hum. (%)").grid(row=4,column=0)    
         
         dht22_text = {}
-        for i in range(5):
+        for i in range(1):
             dht22_text[(i,'temp')] = tk.Label(frame_temps,text="n/a")
             dht22_text[(i,'temp')].grid(row=3,column=1+i)
             dht22_text[(i,'hum')] = tk.Label(frame_temps,text="n/a")

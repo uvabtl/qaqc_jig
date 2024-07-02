@@ -36,6 +36,7 @@ void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
 	WDcfg->PostTrigger = 50;
 	WDcfg->NumEvents = 1023;
 	WDcfg->EnableMask = 0xFFFF;
+	WDcfg->GroupEnableMask = 0x3;
 	WDcfg->GWn = 0;
     WDcfg->ExtTriggerMode = CAEN_DGTZ_TRGMODE_ACQ_ONLY;
     WDcfg->InterruptNumEvents = 0;
