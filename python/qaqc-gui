@@ -5,8 +5,8 @@ GUI for controlling the Caltech BTL QA/QC jig.
 Author: Anthony LaTorre
 Last Updated: Jan 24, 2023
 """
-USE_KEITHLEY = False
-USE_CHILLER = False
+USE_KEITHLEY = True
+USE_CHILLER = True
 
 from btl import Client
 import tkinter as tk
@@ -298,7 +298,7 @@ def chiller_off():
     chiller_pid = int(out.stdout.read().decode().rstrip())
     os.system('kill -9 %d'%chiller_pid)
     os.system('rm /home/cmsdaq/.setBoxTemp_PID.pid')
-    out = Popen(['ssh', 'cmsdaq@100.100.100.1', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --power-off'],stdout=subprocess.PIPE)
+    out = Popen(['ssh', 'cmsdaq@pc-mtd-mib01', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --power-off'],stdout=subprocess.PIPE)
 
     chiller_on_button.config(text='Chiller on')
     chiller_on_button['state'] = tk.NORMAL
@@ -1007,7 +1007,7 @@ if __name__ == '__main__':
         power_off_button.pack()
     
     if USE_CHILLER:
-        out = Popen(['ssh', 'cmsdaq@100.100.100.1', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --check-state'],stdout=subprocess.PIPE)
+        out = Popen(['ssh', 'cmsdaq@pc-mtd-mib01', '/home/cmsdaq/Programs/Lab5015Utils/driveChiller.py --check-state'],stdout=subprocess.PIPE)
         state = int(out.stdout.read().decode().rstrip())
     
         chiller_pid = -1
