@@ -353,7 +353,7 @@ if __name__ == '__main__':
                     ##################
                     # Integrations 
                     ##################
-                    print(f'\nIntegrating {group} {channel}...')
+                    #print(f'\nIntegrating {group} {channel}...')
                     for i in range(0, len(f[group][channel]), args.chunks):
                         print(group,channel,args.chunks,len(f[group][channel]))
                         

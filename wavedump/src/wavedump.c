@@ -2097,7 +2097,7 @@ int main(int argc, char *argv[])
                             printf("Error [%d] loading custom table from file '%s' for group [%u].\n", clret, WDcfg.TablesFilenames[gr], gr);
 			if ((ret = CAEN_DGTZ_EnableDRS4Correction(handle)) != CAEN_DGTZ_Success)
 			  goto QuitProgram;
-			SaveCorrectionTables("X742Table_dump", GroupMask, X742Tables);
+			//SaveCorrectionTables("X742Table_dump", GroupMask, X742Tables);
                     }
                 }
             } // Use Manual Corrections
@@ -2110,8 +2110,8 @@ int main(int argc, char *argv[])
                 if ((ret = CAEN_DGTZ_GetCorrectionTables(handle, WDcfg.DRS4Frequency, (void*)X742Tables)) != CAEN_DGTZ_Success)
 		    goto QuitProgram;
                 uint32_t GroupMask = (~GroupMask) & ((0x1<<WDcfg.MaxGroupNumber)-1);
-                SaveCorrectionTables("X742Table_flash", GroupMask, X742Tables);
-		printf("Saving flash memory correction tables\n");
+                //SaveCorrectionTables("X742Table_flash", GroupMask, X742Tables);
+		//printf("Saving flash memory correction tables\n");
             } // User Automatic corrections
 	    
         }
@@ -2242,9 +2242,9 @@ int main(int argc, char *argv[])
      * a LYSO signal */
     get_baselines(bdata, baselines, NumEvents, channel_mask, nsamples);
 
-    printf("Baselines for channels:\n");
-    for (i = 0; i < 32; i++)
-        printf("    ch %2i = %.0f\n", i, baselines[i]);
+    //printf("Baselines for channels:\n");
+    //for (i = 0; i < 32; i++)
+    //    printf("    ch %2i = %.0f\n", i, baselines[i]);
 
     for (i = 0; i < 16; i++)
         thresholds[i] = 1e99;
@@ -2282,7 +2282,7 @@ int main(int argc, char *argv[])
                 int group = i/8;
                 int channel = i % 8;
                 /* This sets the trigger level */
-                printf("setting trigger threshold for channel %i to %i\n", i, (int) thresholds[i]);
+                //printf("setting trigger threshold for channel %i to %i\n", i, (int) thresholds[i]);
                 ret = CAEN_DGTZ_WriteRegister(handle, 0x1080 + 256*group, (channel << 12) | ((int) thresholds[i] & 0xfff));
 
                 if (ret) {

@@ -20,13 +20,15 @@ import subprocess
 import os
 import h5py
 import sys
+import time
+
 if USE_TTi:
    sys.path.append('/home/cmsdaq/DAQ/TXP3510P')
    from TXP3510PWrapper import TXP3510P
    
 WAVEDUMP_PROGRAM = 'wavedump'
-#ANALYZE_WAVEFORMS_PROGRAM = 'analyze-waveforms'
 INTEGRATE_WAVEFORMS_PROGRAM = 'integrate-waveforms'
+ANALYZE_WAVEFORMS_PROGRAM = 'analyze-waveforms'
 
 # Debug mode. Right now this just controls whether we draw random numbers for
 # polling.
@@ -58,10 +60,18 @@ dLcm_perstep = 0.005 # distance per step, configurable in gui pannel (stepper_dL
 dLcm_intermodule = 5.34 # distance between two modules on the same module board
 dLcm_interboard = 7.76 # distance between two modules from two neighbouring module boards
 
-def filename_template(data_path='./', barcode=None, ov=None, n_spe=None, n_source=None):
+step_lastposition = 0
+out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+step_lastposition = int(out.stdout.read().decode().rstrip())
+
+def filename_template(data_path='./', barcode=None, label=None):
     if not exists(data_path) and data_path != '':
         os.makedirs(data_path)
-    return join(data_path, 'module_%i_Vov%.2f_Nspe%d_Nsource%d.hdf5' % (int(barcode), float(ov), int(n_spe), int(n_source)))
+    if label != None and label != '':
+       label = '_'+label
+    else:
+       label = ''
+    return join(data_path, 'module_%i%s' % (int(barcode), str(label) ))
 
 def print_warning(msg):
     start = entry.index(tk.INSERT)
@@ -117,13 +127,13 @@ def save(filename=None):
     data['trigger'] = trigger.get()
     data['vbds'] = [vbd.get() for vbd in vbds]
     data['data_path'] = data_path.get()
+    data['label'] = label.get()
     data['ip_address'] = ip_address.get()
     data['stepper_enable'] = stepper_enable.get()
     data['stepper_dLperstep'] = stepper_dLperstep.get()
     data['n_spe_events'] = n_spe_events.get()
     data['n_source_events'] = n_source_events.get()
-    data['upload'] = upload_enable.get()
-    print("Saving GUI state from '%s'" % filename)
+    print("Saving GUI state into '%s'" % filename)
     with open(filename,'w') as f:
         json.dump(data,f)
 
@@ -156,6 +166,8 @@ def load(filename=None):
                 vbds[i].set(vbd)
         if 'data_path' in data:
             data_path.set(data['data_path'])            
+        if 'label' in data:
+            label.set(data['label'])            
         if 'ip_address' in data:
             ip_address.set(data['ip_address'])
         if 'stepper_enable' in data:
@@ -166,8 +178,6 @@ def load(filename=None):
             n_spe_events.set(data['n_spe_events'])
         if 'n_source_events' in data:
             n_source_events.set(data['n_source_events'])
-        if 'upload_enable' in data:
-            upload_enable.set(data['upload_enable'])
         n_boards_changed()
 
 def on_closing():
@@ -233,28 +243,24 @@ def reanalyze_data():
             return
 
         try:
-            filename = filename_template(data_path=data_path.get(), barcode=barcode, ov=ov.get(), n_spe=n_spe_events.get(), n_source=n_source_events.get())
+            filename = filename_template(data_path=data_path.get(), barcode=barcode, label=label.get())+'.hdf5'
         except:
             print_warning("Not a valid data path: %s\n" % data_path.get())
             return
 
-        entry.insert(tk.END, "Analyzing data for module %i\n" % int(barcode))
+        entry.insert(tk.END, "Integrating data for module %i\n" % int(barcode))
         entry.yview(tk.END)
         entry.update()
 
         root, ext = splitext(filename)
-#        #root_filename = "%s.root" % root
-#        #cmd = [ANALYZE_WAVEFORMS_PROGRAM,filename,'-o', root_filename]
         out_filename = "%s_integrals.hdf5" % root
         cmd = [INTEGRATE_WAVEFORMS_PROGRAM,filename,'-o', out_filename]
         
-        if upload_enable.get():
-            cmd += ['-u']
         if run_command(cmd,progress_bar=i):
-            module_status[i].config(text="Failed analysis")
+            module_status[i].config(text="Failed integration")
             continue
 
-        module_status[i].config(text="Data + analysis successful!")
+        module_status[i].config(text="Integration successful!")
 
 def power_on():
     """
@@ -318,328 +324,286 @@ def chiller_off():
     chiller_on_button['state'] = tk.NORMAL
     chiller_off_button['state'] = tk.DISABLED
 
+# Setup module positions for stepper motor
+dLcm_perstep= 0.005 # default=0.005
+nstep_intermodule = dLcm_intermodule/dLcm_perstep
+nstep_interboard = dLcm_interboard/dLcm_perstep
+list_nstep= [ 0,                 # board 0, module 0
+              nstep_intermodule, # board 0, module 1
+              nstep_intermodule, # board 0, module 2
+              nstep_interboard,  # board 1, module 0
+              nstep_intermodule, # board 1, module 1
+              nstep_intermodule, # board 1, module 2
+              nstep_interboard,  # board 2, module 0
+              nstep_intermodule, # board 2, module 1
+              nstep_intermodule, # board 2, module 2
+              nstep_interboard,  # board 3, module 0
+              nstep_intermodule, # board 3, module 1
+              nstep_intermodule, # board 3, module 2
+]
+
 def take_data():
-    """
-    Function to take single PE and 511 keV data for all the modules marked
-    present in the GUI. First, we move the stepper motor, then take single PE
-    data, then 511 data, and finally analyze it and upload the results to the
-    database.
-    """
-    # Clear error messages
-    entry.delete(1.0,tk.END)
+   """
+   Function to take single PE and 511 keV data for all the modules marked
+   present in the GUI. First, we move the stepper motor, then take single PE
+   data, then 511 data, and finally analyze it
+   """
+   
+   # Clear error messages
+   entry.delete(1.0,tk.END)
+   
+   dLcm_perstep= float(stepper_dLperstep.get()) # default=0.005
+   
+   n_boards = int(n_boards_var.get())
+   
+   
+   # Make sure they entered the barcodes first.
+   for i in range(12):
+      if not module_available[i].get():
+         continue
 
-    n_boards = int(n_boards_var.get())
+      barcode = barcodes[i].get()
+      if barcode == '':
+         print_warning('Need to enter a barcode for module %i\n' % i)
+         return
 
-    # Setup module positions for stepper motor
-    dLcm_perstep= float(stepper_dLperstep.get()) # default=0.005
-    nstep_intermodule = dLcm_intermodule/dLcm_perstep
-    nstep_interboard = dLcm_interboard/dLcm_perstep
-    list_nstep_old = [ 0,                 # board 0, module 0
-                   1*nstep_intermodule, # board 0, module 1
-                   2*nstep_intermodule, # board 0, module 2
-                   1*nstep_interboard + 2*nstep_intermodule,  # board 1, module 0
-                   1*nstep_interboard + 3*nstep_intermodule, # board 1, module 1
-                   1*nstep_interboard + 4*nstep_intermodule, # board 1, module 2
-                   2*nstep_interboard + 4*nstep_intermodule,  # board 2, module 0
-                   2*nstep_interboard + 5*nstep_intermodule, # board 2, module 1
-                   2*nstep_interboard + 6*nstep_intermodule, # board 2, module 2
-                   3*nstep_interboard + 6*nstep_intermodule,  # board 3, module 0
-                   3*nstep_interboard + 7*nstep_intermodule, # board 3, module 1
-                   3*nstep_interboard + 8*nstep_intermodule, # board 3, module 2
-                ]
-    list_nstep= [ 0,                 # board 0, module 0
-                   nstep_intermodule, # board 0, module 1
-                   nstep_intermodule, # board 0, module 2
-                   nstep_interboard,  # board 1, module 0
-                   nstep_intermodule, # board 1, module 1
-                   nstep_intermodule, # board 1, module 2
-                   nstep_interboard,  # board 2, module 0
-                   nstep_intermodule, # board 2, module 1
-                   nstep_intermodule, # board 2, module 2
-                   nstep_interboard,  # board 3, module 0
-                   nstep_intermodule, # board 3, module 1
-                   nstep_intermodule, # board 3, module 2
-                ]
+      progress_bars[i]['value'] = 0
+      module_status[i].config(text="-")
 
+   client = Client(ip_address.get())
     
-    # Make sure they entered the barcodes first.
-    for i in range(12):
-        if not module_available[i].get():
-            continue
-
-        barcode = barcodes[i].get()
-        if barcode == '':
-            print_warning('Need to enter a barcode for module %i\n' % i)
-            return
-
-        progress_bars[i]['value'] = 0
-        module_status[i].config(text="-")
-
-    client = Client(ip_address.get())
-
-    # First, we try to get the stepper to the home position
-    #
-    # Techicalities: Command 'step_home' may take second or up to minutes for moving to home depending on its last position.
-    #                Teensy can sucessfully send back a return packet to PC for the completion of this operation.
-    #                But due to the long waiting time, the actual udp packet are often missed in the udp recvform() buffer of the PC.
-    # Workaround: Ignore the timeout and the return packet of 'step_home'.
-    #             Start a loop to read the value of stp_home pin on teensy.
-    #             If stp_home is LOW, then the home position is reached.
-    #             One more thing, we need to clear up the udp recvfrom() buffer at PC,
-    #             since the above operations have overlooked at least one packet,
-    #             and this leftover misaligns later communication.
-    if stepper_enable.get():
-        try:
-            query(client, "step_home")
-        except Exception as e:
-            print_warning(str(e)+' due to step_home. Ignore!')
-            # Read Pin 17 of teensy (stp_home)
-            pin17 = 1
-            while(1):
-                try:
-                    pin17 = query(client, "read_pin 17")
-                except Exception as e:
-                    print_warning(str(e)+" waiting for read_pin 17. Retry!")
-                # Pin stp_home LOW means home position
-                if pin17 == 0:
-                    print("step_home done")
-                    break
-                sleep(10)
-            # clearup recvfrom buffer
-            _oldtimeout = client.sock.gettimeout()
-            for _i in range(5):
-                try:
-                    client.sock.settimeout(1)
-                    client.recv()
-                except Exception as e:
-                    pass
-            client.sock.settimeout(_oldtimeout)
-
-        step_lastposition = 0
-
-    # Next, we take the single PE data
-    try:
-        query(client, "set_attenuation off")
-    except Exception as e:
-        print_warning(str(e))
-        return
-
-    # First, make sure all the HV relays are off
-    hv_off(client)
-
-    # Now, we turn them on one by one and take data
-    for i in range(12):
-        if not module_available[i].get():
-            entry.insert(tk.END, "Skipping module %i\n" % i)
-            continue
+   # Increment the run number
+   run = -1
+   with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run') as f:
+      runs = [int(x) for x in next(f).split()]
+      run = str(runs[0]+1)
+      os.remove('/home/cmsdaq/DAQ/qaqc_jig/.last_run')
+      with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run','w+') as f:
+         f.write(run)
+   run_path = data_path.get() + '/run%04d'%int(run)
+   if not exists(run_path) and run_path != '':
+      os.makedirs(run_path)
+   
+   # Store the GUI config
+   try:
+      save(run_path+'/qaqc_gui.settings')
+   except:
+      print_warning("Not a valid data path: %s\n" % run_path)
+      return
+   
+   # First, we try to get the stepper to the home position
+   #
+   # Techicalities: Command 'step_home' may take second or up to minutes for moving to home depending on its last position.
+   #                Teensy can sucessfully send back a return packet to PC for the completion of this operation.
+   #                But due to the long waiting time, the actual udp packet are often missed in the udp recvform() buffer of the PC.
+   # Workaround: Ignore the timeout and the return packet of 'step_home'.
+   #             Start a loop to read the value of stp_home pin on teensy.
+   #             If stp_home is LOW, then the home position is reached.
+   #             One more thing, we need to clear up the udp recvfrom() buffer at PC,
+   #             since the above operations have overlooked at least one packet,
+   #             and this leftover misaligns later communication.
+   if stepper_enable.get():
+      out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+      step_lastposition = int(out.stdout.read().decode().rstrip())
+      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+      
+   # Next, we take the single PE data
+   try:
+      query(client, "set_attenuation off")
+   except Exception as e:
+      print_warning(str(e))
+      return
+   
+   # First, make sure all the HV relays are off
+   hv_off(client)
+   
+   # Now, we turn them on one by one and take data
+   for i in range(12):
+      
+      if not module_available[i].get():
+         entry.insert(tk.END, "Skipping module %i\n" % i)
+         continue
         
-        barcode = barcodes[i].get()
-        if barcode == '':
-            print_warning('Need to enter a barcode for module %i\n' % i)
-            return
-
-        vbd = vbds[i].get()
-        if vbd == '':
-            print_warning('Need to enter a Vbd for module %i\n' % i)
-            return
-
-        hv = float(vbd)+float(ov.get())
-        print('Setting absolute bias voltage %.2f for module %i\n' %(hv,i) )
-
-        try:
-            filename = filename_template(data_path=data_path.get(), barcode=barcode, ov=ov.get(), n_spe=n_spe_events.get(), n_source=n_source_events.get())
-        except:
-            print_warning("Not a valid data path: %s\n" % data_path.get())
-            return
-
-        if exists(filename):
-            print("deleting %s" % filename)
-            os.unlink(filename)
-
-        # Move the stepper motor to the position of the module
-        if stepper_enable.get():
-            if list_nstep[i]==0:
-                pass
-            else:
-                try:
-                    #query(client, "step %i" % (list_nstep[i] - list_nstep[step_lastposition]), 3000)
-                    for j in range(step_lastposition +1, i+1):
-                        query(client, "step %i" % list_nstep[j], 600)
-                        print("step %i done" % j)
-                except Exception as e:
-                    print_warning(str(e)+" step")
-                    return
-
-            step_lastposition = i
-
-        # Loop over first 8 channels and second eight channels
-        for j in range(2):
-            # Diagram to help figure out what's going on. It's drawn as if you
-            # are looking top down at the modules plugged in:
-            #
-            #     Bus HV1 HV2 Module Bus HV1 HV2
-            #     --- --- --- ------ --- --- ---
-            #      2   0   1     5    3   4   5
-            #      2   2   3     4    3   2   3
-            #      2   4   5     3    3   0   1
-            #
-            #      0   0   1     2    1   4   5
-            #      0   2   3     1    1   2   3
-            #      0   4   5     0    1   0   1
-
-            # Loop over left and right sides
-            for k in range(2):
-                bus = (i//3)*2 + k
-                relay = (i % 3)*2 + j
-
-                if k == 0:
-                    # Ordering for the board on left side is backwards from the
-                    # board on the right side
-                    relay = 5 - relay
-
-                try:
-                    query(client, "hv_write %i %i on" % (bus, relay))
-                except Exception as e:
-                    print_warning(str(e))
-                    return
-
+      barcode = barcodes[i].get()
+      if barcode == '':
+         print_warning('Need to enter a barcode for module %i\n' % i)
+         return
+        
+      vbd = vbds[i].get()
+      if vbd == '':
+         print_warning('Need to enter a Vbd for module %i\n' % i)
+         return
+      
+      hv = float(vbd)+float(ov.get())
+      print('Setting absolute bias voltage %.2f for module %i\n' %(hv,i) )
+      
+      try:
+         filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'.hdf5'
+      except:
+         print_warning("Not a valid data path: %s\n" % run_path)
+         return
+      
+      if exists(filename):
+         print("deleting %s" % filename)
+         os.unlink(filename)
+      
+      # Move the stepper motor to the position of the module
+      if stepper_enable.get():
+         step_module(i)
+         
+      # Loop over first 8 channels and second eight channels
+      for j in range(2):
+         # Diagram to help figure out what's going on. It's drawn as if you
+         # are looking top down at the modules plugged in:
+         #
+         #     Bus HV1 HV2 Module Bus HV1 HV2
+         #     --- --- --- ------ --- --- ---
+         #      2   0   1     5    3   4   5
+         #      2   2   3     4    3   2   3
+         #      2   4   5     3    3   0   1
+         #
+         #      0   0   1     2    1   4   5
+         #      0   2   3     1    1   2   3
+         #      0   4   5     0    1   0   1
+         
+         # Loop over left and right sides
+         for k in range(2):
+            bus = (i//3)*2 + k
+            relay = (i % 3)*2 + j
+            
+            if k == 0:
+               # Ordering for the board on left side is backwards from the
+               # board on the right side
+               relay = 5 - relay
+                  
             try:
-                query(client, "set_hv %.2f" % hv )
+               query(client, "hv_write %i %i on" % (bus, relay))
             except Exception as e:
-                print_warning(str(e))
-                return
-
-            # Turn the attenuation off to take SPE data
-            try:
-                query(client, "set_attenuation off")
-            except Exception as e:
-                print_warning(str(e))
-                return
-
-            if run_command([WAVEDUMP_PROGRAM,'-t','software','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
-            #if run_command([WAVEDUMP_PROGRAM,'-t','external','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
-            #if run_command([WAVEDUMP_PROGRAM,'-t','self','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename,'--threshold',-0.05], progress_bar=i):
-                hv_off(client)
-                return
-
-            # Turn the attenuation on to take source data
-            try:
-                query(client, "set_attenuation on")
-            except Exception as e:
-                print_warning(str(e))
-                return
-
-            try:
-                voltage = query(client, "extmon_vread")
-            except Exception as e:
-                print_warning(str(e))
-                return
-
-            cmd = [WAVEDUMP_PROGRAM,'-t','self','-l','lyso','--channel-map',j % 2,'-n',n_source_events.get(),'-o',filename,'--threshold',trigger.get()]
-            print_warning(" ".join(str(c) for c in cmd))
-            if run_command(cmd, progress_bar=i):
-                hv_off(client)
-                return
-
-            try:
-                query(client, "disable_hv")
-            except Exception as e:
-                print_warning(str(e))
-                return
-
-            # Loop over left and right sides
-            for k in range(2):
-                bus = (i//3)*2 + k
-                relay = (i % 3)*2 + j
-
-                if k == 0:
-                    # Ordering for the board on left side is backwards from the
-                    # board on the right side
-                    relay = 5 - relay
-
-                try:
-                    query(client, "hv_write %i %i off" % (bus, relay))
-                except Exception as e:
-                    print_warning(str(e))
-                    return
-
-        info = poll_single_module(client,i)
-
-        with h5py.File(filename,"a") as f:
-            for key, value in info.items():
-                f.attrs[key] = value
-
-            f.attrs['barcode'] = barcode
-            f.attrs['voltage'] = voltage
-            f.attrs['institution'] = assembly_center.get()
-
-        module_status[i].config(text="Data taking done")
-
-    # Send the stepper back to the home position that takes a while
-    # See above explaination of this operation
-    if stepper_enable.get():
-        print("Sending back stepper motor to home position")
-        try:
-            query(client, "step_home")
-        except Exception as e:
-            print_warning(str(e)+' due to step_home. Ignore!')
-            # Read Pin 17 of teensy (stp_home)
-            pin17 = 1
-            while(1):
-                try:
-                    pin17 = query(client, "read_pin 17")
-                except Exception as e:
-                    print_warning(str(e)+" waiting for read_pin 17. Retry!")
-                # Pin stp_home LOW means home position
-                if pin17 == 0:
-                    print("step_home done")
-                    break
-                sleep(10)
-            # clearup recvfrom buffer
-            _oldtimeout = client.sock.gettimeout()
-            for _i in range(5):
-                try:
-                    client.sock.settimeout(1)
-                    client.recv()
-                except Exception as e:
-                    pass
-            client.sock.settimeout(_oldtimeout)
-        print("Stepper motor at home position")
-
-    # Now, we analyze all the data
-    for i in range(12):
-        if not module_available[i].get():
-            entry.insert(tk.END, "Skipping module %i\n" % i)
-            continue
-
-        barcode = barcodes[i].get()
-        if barcode == '':
-            print_warning('Need to enter a barcode for module %i\n' % i)
+               print_warning(str(e))
+               return
+            
+         try:
+            query(client, "set_hv %.2f" % hv )
+         except Exception as e:
+            print_warning(str(e))
             return
-
-        try:
-            filename = filename_template(data_path=data_path.get(), barcode=barcode, ov=ov.get(), n_spe=n_spe_events.get(), n_source=n_source_events.get())
-        except:
-            print_warning("Not a valid data path: %s\n" % data_path.get())
+            
+         # Turn the attenuation off to take SPE data
+         try:
+            query(client, "set_attenuation off")
+         except Exception as e:
+            print_warning(str(e))
             return
+         
+         entry.insert(tk.END, 'Taking spe events for module %d (%d/2)\n'%(i,j+1))
+         entry.yview(tk.END)
+         entry.update()
+         if run_command([WAVEDUMP_PROGRAM,'-t','software','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
+         #if run_command([WAVEDUMP_PROGRAM,'-t','external','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
+         #if run_command([WAVEDUMP_PROGRAM,'-t','self','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename,'--threshold',-0.05], progress_bar=i):
+            hv_off(client)
+            return
+         
+         # Turn the attenuation on to take source data
+         try:
+            query(client, "set_attenuation on")
+         except Exception as e:
+            print_warning(str(e))
+            return
+         
+         try:
+            voltage = query(client, "extmon_vread")
+         except Exception as e:
+            print_warning(str(e))
+            return
+         
+         entry.insert(tk.END, 'Taking lyso events for module %d (%d/2)\n'%(i,j+1))
+         entry.yview(tk.END)
+         entry.update()
+         cmd = [WAVEDUMP_PROGRAM,'-t','self','-l','lyso','--channel-map',j % 2,'-n',n_source_events.get(),'-o',filename,'--threshold',trigger.get()]
+         print_warning(" ".join(str(c) for c in cmd))
+         if run_command(cmd, progress_bar=i):
+            hv_off(client)
+            return
+         
+         try:
+            query(client, "disable_hv")
+         except Exception as e:
+            print_warning(str(e))
+            return
+         
+         # Loop over left and right sides
+         for k in range(2):
+            bus = (i//3)*2 + k
+            relay = (i % 3)*2 + j
+            
+            if k == 0:
+               # Ordering for the board on left side is backwards from the
+               # board on the right side
+               relay = 5 - relay
+               
+            try:
+               query(client, "hv_write %i %i off" % (bus, relay))
+            except Exception as e:
+               print_warning(str(e))
+               return
+         
+      info = poll_single_module(client,i)
+      
+      with h5py.File(filename,"a") as f:
+         for key, value in info.items():
+            f.attrs[key] = value
+         f.attrs['barcode'] = barcode
+         f.attrs['voltage'] = voltage
+         f.attrs['institution'] = assembly_center.get()
+         
+      module_status[i].config(text="Data taking done")
+         
+   # Send the stepper back to the home position that takes a while
+   # See above explaination of this operation
+   
+   # Now, we analyze all the data
+   for i in range(12):
+      if not module_available[i].get():
+         entry.insert(tk.END, "Skipping module %i\n" % i)
+         continue
+      
+      barcode = barcodes[i].get()
+      if barcode == '':
+         print_warning('Need to enter a barcode for module %i\n' % i)
+         return
+      
+      filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'.hdf5'
+      
+      entry.insert(tk.END, "Integrating data for module %i\n" % int(barcode))
+      entry.yview(tk.END)
+      entry.update()
+      
+      root, ext = splitext(filename)
+      out_filename = "%s_integrals.hdf5" % root
+      cmd = [INTEGRATE_WAVEFORMS_PROGRAM,filename,'-o', out_filename]
+        
+      if run_command(cmd,progress_bar=i):
+         module_status[i].config(text="Failed integration")
+         continue
+      
+      module_status[i].config(text="Integration successful!")
+      
+      filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'_integrals.hdf5'
+      
+      entry.insert(tk.END, "Analyzing data for module %i\n" % int(barcode))
+      entry.yview(tk.END)
+      entry.update()
+      
+      out_filename = "%s_analysis.root" % root
+      cmd = [ANALYZE_WAVEFORMS_PROGRAM,'-o',out_filename,'--sourceType','cesium','--print-pdfs','/var/www/html/',filename]
+      
+      if run_command(cmd,progress_bar=i):
+         module_status[i].config(text="Failed analysis")
+         continue
+      
+      module_status[i].config(text="Analysis successful!")
 
-        entry.insert(tk.END, "Analyzing data for module %i\n" % int(barcode))
-        entry.yview(tk.END)
-        entry.update()
-
-        root, ext = splitext(filename)
-#       # root_filename = "%s.root" % root
-#       # cmd = [ANALYZE_WAVEFORMS_PROGRAM,filename,'-o', root_filename]
-        out_filename = "%s_integrals.hdf5" % root
-        cmd = [INTEGRATE_WAVEFORMS_PROGRAM,filename,'-o', out_filename]
-
-        if upload_enable.get():
-            cmd += ['-u']
-        if run_command(cmd,progress_bar=i):
-            module_status[i].config(text="Failed analysis")
-            continue
-
-        module_status[i].config(text="Data + analysis successful!")
 
 def poll_single_module(client, module):
     values = {}
@@ -750,8 +714,10 @@ def step_home():
             # Pin stp_home LOW means home position
             if pin17 == 0:
                 print("step_home done")
+                step_lastposition = 0
+                os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
                 break
-            sleep(10)
+            time.sleep(10)
         # clearup recvfrom buffer
         _oldtimeout = client.sock.gettimeout()
         for _i in range(5):
@@ -761,6 +727,35 @@ def step_home():
             except Exception as e:
                 pass
         client.sock.settimeout(_oldtimeout)
+
+def step_module(module_i):
+   
+   out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+   step_lastposition = int(out.stdout.read().decode().rstrip())
+
+   ##module_i = int(module_step_entry.get())
+   print("going to module %d from module %d"%(module_i,step_lastposition))
+   
+   client = Client(ip_address.get())
+   #Move the stepper motor to the position of the i-th module
+   if stepper_enable.get():
+      try:
+         if module_i>step_lastposition:
+            for j in range(step_lastposition +1, module_i+1):
+               query(client, "step %i" % list_nstep[j], 600)
+            print("step %i done" % module_i)
+         elif module_i<step_lastposition:
+            for j in range(module_i +1, step_lastposition+1):
+               query(client, "step %i" % -list_nstep[j], 600)
+            print("step %i done" % module_i)
+         else:
+            pass
+      except Exception as e:
+         print_warning(str(e)+" step")
+         return
+
+      step_lastposition = module_i
+      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
 
 def n_boards_changed(*args):
     for i in range(4):
@@ -835,6 +830,7 @@ if __name__ == '__main__':
     frame_buttons = tk.Frame(tab1)
     frame_buttons2 = tk.Frame(tab1)
     frame_chiller = tk.Frame(tab1)
+    frame_stepper = tk.Frame(tab1)
     frame_thermistor = tk.Frame(tab2)
     frame_adv_buttons = tk.Frame(tab2)
 
@@ -918,27 +914,28 @@ if __name__ == '__main__':
     data_path.set('')
     data_path_menu_entry = tk.Entry(frame_menu, textvariable=data_path)
     data_path_menu_entry.grid(row=6,column=1)
+
+    label_menu_label = tk.Label(frame_menu, text="Extra label: ")
+    label_menu_label.grid(row=7,column=0)
+    label = tk.StringVar(frame_menu)
+    label.set('')
+    label_menu_entry = tk.Entry(frame_menu, textvariable=label)
+    label_menu_entry.grid(row=7,column=1)
     
     n_spe_events_menu_label = tk.Label(frame_menu, text="Number of SPE Events: ")
-    n_spe_events_menu_label.grid(row=7,column=0)
+    n_spe_events_menu_label.grid(row=8,column=0)
     n_spe_events = tk.IntVar(frame_menu)
     n_spe_events.set(100000)
     n_spe_events_menu_entry = tk.Entry(frame_menu, textvariable=n_spe_events)
-    n_spe_events_menu_entry.grid(row=7,column=1)
+    n_spe_events_menu_entry.grid(row=8,column=1)
 
     n_source_events_menu_label = tk.Label(frame_menu, text="Number of Source Events: ")
-    n_source_events_menu_label.grid(row=8,column=0)
+    n_source_events_menu_label.grid(row=9,column=0)
     n_source_events = tk.IntVar(frame_menu)
     n_source_events.set(100000)
     n_source_events_menu_entry = tk.Entry(frame_menu, textvariable=n_source_events)
-    n_source_events_menu_entry.grid(row=8,column=1)
-
-    upload_menu_label = tk.Label(frame_menu, text="Upload Results: ")
-    upload_menu_label.grid(row=9,column=0)
-    upload_enable = tk.IntVar(frame_menu, value=0)
-    upload_enable_checkbox = tk.Checkbutton(frame_menu, text=None, variable=upload_enable, onvalue=1, offvalue=0)
-    upload_enable_checkbox.grid(row=9,column=1)
-
+    n_source_events_menu_entry.grid(row=9,column=1)
+    
     stepper_enable_label = tk.Label(frame_menu, text="Enable stepper motor: ")
     stepper_enable_label.grid(row=10,column=0)
     stepper_enable = tk.IntVar(frame_settings, value=0)
@@ -998,7 +995,10 @@ if __name__ == '__main__':
 
     button_home = tk.Button(master=frame_buttons,text="Stepper Home", width=25, height=5, command=step_home)
     button_home.pack()
-
+    
+    button_module = tk.Button(master=frame_buttons,text="Stepper To Module", width=25, height=5, command = lambda: step_module(int(module_step_entry.get())))
+    button_module.pack()
+    
     #stepper_enable = tk.IntVar(frame_settings, value=0)
     #stepper_enable_checkbox = tk.Checkbutton(frame_settings, text='Enable Stepper', variable=stepper_enable, onvalue=1, offvalue=0)
     #stepper_enable_checkbox.pack()
@@ -1063,14 +1063,19 @@ if __name__ == '__main__':
             dht22_text[(i,'hum')].grid(row=4,column=1+i)
         read_dht22()
         
+        module_step_label = tk.Label(frame_stepper, text="module to go: ")
+        module_step_label.grid(row=0,column=0)
+        module_step = tk.StringVar(frame_temps, value="0")
+        module_step_entry = tk.Entry(frame_stepper, textvariable=module_step)
+        module_step_entry.grid(row=1,column = 0)
 
     #frame_settings.grid(row=0,column=1)
     frame_buttons.grid(row=0,column=1)
     frame_buttons2.grid(row=0,column=2)
     frame_chiller.grid(row=1,column=2)
+    frame_stepper.grid(row=2,column=2)
     #frame_temps.grid(row=1,column=2)
-
-    # Load saved GUI state
+    
     load()
 
     root.mainloop()

@@ -99,7 +99,7 @@ def plot_hist(h, path=None, filename=None, logy=False):
         #     os.makedirs(dir_path)
         root, ext = os.path.splitext(filename)
         if not os.path.isdir("%s/%s"%(path,root)):
-            os.mkdir("%s/%s"%(path,root))
+            os.makedirs("%s/%s"%(path,root))
         
         #print('Printing plots to file: %s/%s/%s' % (args.print_pdfs,root, h.GetName() ) )
         c.Print("%s/%s/%s.pdf" % (path, root, h.GetName()))

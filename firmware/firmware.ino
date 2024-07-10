@@ -35,9 +35,9 @@
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-  0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA
+  0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE
 };
-IPAddress ip(192, 168, 1, 177);
+IPAddress ip(10, 0, 0, 201);
 
 unsigned int localPort = 8888;      // local port to listen on
 

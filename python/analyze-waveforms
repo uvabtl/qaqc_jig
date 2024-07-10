@@ -32,7 +32,7 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     import ROOT
     from ROOT import gROOT
-    import tdrstyle
+    from utilities import tdrstyle
     import matplotlib.pyplot as plt
     import psycopg2
     import psycopg2.extensions
@@ -70,6 +70,7 @@ if __name__ == '__main__':
     
 
     if args.print_pdfs:
+       print(args.print_pdfs)
        if not os.path.exists(args.print_pdfs):
        	  os.makedirs(args.print_pdfs)
     
