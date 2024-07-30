@@ -5,8 +5,8 @@ GUI for controlling the Caltech BTL QA/QC jig.
 Author: Anthony LaTorre
 Last Updated: Jan 24, 2023
 """
-USE_TTi = True
-USE_CHILLER = True
+USE_TTi = False
+USE_CHILLER = False
 
 from btl import Client
 import tkinter as tk
@@ -61,7 +61,7 @@ dLcm_intermodule = 5.34 # distance between two modules on the same module board
 dLcm_interboard = 7.76 # distance between two modules from two neighbouring module boards
 
 step_lastposition = 0
-out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+out = Popen(['cat','./.step_lastposition'],stdout=subprocess.PIPE)
 step_lastposition = int(out.stdout.read().decode().rstrip())
 
 def filename_template(data_path='./', barcode=None, label=None):
@@ -374,11 +374,11 @@ def take_data():
     
    # Increment the run number
    run = -1
-   with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run') as f:
+   with open('./.last_run') as f:
       runs = [int(x) for x in next(f).split()]
       run = str(runs[0]+1)
-      os.remove('/home/cmsdaq/DAQ/qaqc_jig/.last_run')
-      with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run','w+') as f:
+      os.remove('./.last_run')
+      with open('./.last_run','w+') as f:
          f.write(run)
    run_path = data_path.get() + '/run%04d'%int(run)
    if not exists(run_path) and run_path != '':
@@ -403,9 +403,9 @@ def take_data():
    #             since the above operations have overlooked at least one packet,
    #             and this leftover misaligns later communication.
    if stepper_enable.get():
-      out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+      out = Popen(['cat','./.step_lastposition'],stdout=subprocess.PIPE)
       step_lastposition = int(out.stdout.read().decode().rstrip())
-      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+      os.system('echo %d > ./.step_lastposition'%step_lastposition)
       
    # Next, we take the single PE data
    try:
@@ -715,7 +715,7 @@ def step_home():
             if pin17 == 0:
                 print("step_home done")
                 step_lastposition = 0
-                os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+                os.system('echo %d > ./.step_lastposition'%step_lastposition)
                 break
             time.sleep(10)
         # clearup recvfrom buffer
@@ -730,7 +730,7 @@ def step_home():
 
 def step_module(module_i):
    
-   out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+   out = Popen(['cat','./.step_lastposition'],stdout=subprocess.PIPE)
    step_lastposition = int(out.stdout.read().decode().rstrip())
 
    ##module_i = int(module_step_entry.get())
@@ -755,7 +755,7 @@ def step_module(module_i):
          return
 
       step_lastposition = module_i
-      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+      os.system('echo %d > ./.step_lastposition'%step_lastposition)
 
 def n_boards_changed(*args):
     for i in range(4):
