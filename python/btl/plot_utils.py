@@ -4,6 +4,13 @@ import numpy as np
 import ROOT
 
 
+def GetBarValue(g,bar):
+    val = -999.
+    for point in range(g.GetN()):
+        if abs(g.GetPointX(point) - bar) < 0.01:
+            val = g.GetPointY(point)
+    return val
+
 def GetMaximum(g):
     maximum = -999999.
     for point in range(g.GetN()):
@@ -11,6 +18,22 @@ def GetMaximum(g):
             maximum = g.GetPointY(point)
     return maximum
 
+def GetMinimum(g):
+    minimum = 999999.
+    for point in range(g.GetN()):
+        if g.GetPointY(point) < minimum:
+            minimum = g.GetPointY(point)
+    return minimum
+
+def GetAbsMaxMin(g):
+    maximum = -999999.
+    minimum = +999999.
+    for point in range(g.GetN()):
+        if abs(g.GetPointY(point)) > maximum:
+            maximum = abs(g.GetPointY(point))
+        if abs(g.GetPointY(point)) < minimum:
+            minimum = abs(g.GetPointY(point))
+    return maximum, minimum
 
 def iqr(x):
     return np.percentile(x,75) - np.percentile(x,25)
@@ -101,7 +124,7 @@ def plot_hist(h, path=None, filename=None, logy=False):
         if not os.path.isdir("%s/%s"%(path,root)):
             os.makedirs("%s/%s"%(path,root))
         
-        #print('Printing plots to file: %s/%s/%s' % (args.print_pdfs,root, h.GetName() ) )
+        #print('Printing plots to file: %s %s' % (path, root))
         c.Print("%s/%s/%s.pdf" % (path, root, h.GetName()))
         c.Print("%s/%s/%s.png" % (path, root, h.GetName()))
 
@@ -117,6 +140,9 @@ def plot_graph(g, path=None, filename=None, xMin=-1., xMax=32., yMin=-1., yMax=-
     g.SetMarkerColor(ROOT.kBlack)
     mean = g.GetMean(2)
     rms = g.GetRMS(2)    
+    maxim = GetMaximum(g)
+    minim = GetMinimum(g)
+    #maxim, minim = GetAbsMaxMin(g)
     hPad = None
     if yMin == yMax:
         hPad = ROOT.gPad.DrawFrame(xMin,0,xMax,max(mean*2, mean+5*rms))
@@ -136,6 +162,12 @@ def plot_graph(g, path=None, filename=None, xMin=-1., xMax=32., yMin=-1., yMax=-
     latex.SetTextSize(0.050)
     latex.SetTextColor(ROOT.kBlack)
     latex.Draw()
+    lab2 = 'max = %.2f , min = %.2f'%(maxim,minim)
+    latex2 = ROOT.TLatex( 0.20, 0.80,lab2)
+    latex2.SetNDC()
+    latex2.SetTextSize(0.050)
+    latex2.SetTextColor(ROOT.kBlack)
+    latex2.Draw()
     ROOT.gPad.SetGridy()
     c.Update()
     if not path or not filename:

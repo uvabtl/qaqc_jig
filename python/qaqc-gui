@@ -498,6 +498,7 @@ def take_data():
          entry.insert(tk.END, 'Taking spe events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
          entry.update()
+         module_status[i].config(text="Taking spe data (%d/2)"%(j+1))
          if run_command([WAVEDUMP_PROGRAM,'-t','software','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
          #if run_command([WAVEDUMP_PROGRAM,'-t','external','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename], progress_bar=i):
          #if run_command([WAVEDUMP_PROGRAM,'-t','self','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename,'--threshold',-0.05], progress_bar=i):
@@ -520,6 +521,7 @@ def take_data():
          entry.insert(tk.END, 'Taking lyso events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
          entry.update()
+         module_status[i].config(text="Taking lyso data (%d/2)"%(j+1))
          cmd = [WAVEDUMP_PROGRAM,'-t','self','-l','lyso','--channel-map',j % 2,'-n',n_source_events.get(),'-o',filename,'--threshold',trigger.get()]
          print_warning(" ".join(str(c) for c in cmd))
          if run_command(cmd, progress_bar=i):
@@ -556,23 +558,10 @@ def take_data():
          f.attrs['barcode'] = barcode
          f.attrs['voltage'] = voltage
          f.attrs['institution'] = assembly_center.get()
-         
+      
       module_status[i].config(text="Data taking done")
-         
-   # Send the stepper back to the home position that takes a while
-   # See above explaination of this operation
-   
-   # Now, we analyze all the data
-   for i in range(12):
-      if not module_available[i].get():
-         entry.insert(tk.END, "Skipping module %i\n" % i)
-         continue
       
-      barcode = barcodes[i].get()
-      if barcode == '':
-         print_warning('Need to enter a barcode for module %i\n' % i)
-         return
-      
+      # Analyze data now
       filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'.hdf5'
       
       entry.insert(tk.END, "Integrating data for module %i\n" % int(barcode))
@@ -596,13 +585,18 @@ def take_data():
       entry.update()
       
       out_filename = "%s_analysis.root" % root
-      cmd = [ANALYZE_WAVEFORMS_PROGRAM,'-o',out_filename,'--sourceType','cesium','--print-pdfs','/var/www/html/',filename]
+      cmd = [ANALYZE_WAVEFORMS_PROGRAM,'-o',out_filename,'--slot',i,'--sourceType','cesium','--print-pdfs','/var/www/html/',filename]
       
       if run_command(cmd,progress_bar=i):
          module_status[i].config(text="Failed analysis")
          continue
       
       module_status[i].config(text="Analysis successful!")
+
+   # Send the stepper back to the home position that takes a while
+   # See above explaination of this operation
+
+
 
 
 def poll_single_module(client, module):
