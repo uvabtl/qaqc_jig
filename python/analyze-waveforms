@@ -57,11 +57,13 @@ if __name__ == '__main__':
     parser.add_argument("--print-pdfs", default=None, dest='print_pdfs', type=str, help="Folder to save pdfs in.")
     parser.add_argument('--channel-mask', type=lambda x: int(x,0), default=0xffffffff, help='channel mask')
     parser.add_argument('-g', '--group', type=str, default=None, help='which group to analyze')
+    parser.add_argument('--useCalib', type=bool, default=False, help='use calibration')
     args = parser.parse_args()
 
     
-    calib_file = ROOT.TFile("../qaqc_calibration/master_calib.root", "read")
-    gMasterCalib = calib_file.Get("gMasterCalib")
+    if args.useCalib:
+        calib_file = ROOT.TFile("../qaqc_calibration/master_calib.root", "read")
+        gMasterCalib = calib_file.Get("gMasterCalib")
     
     
     if not args.plot:
@@ -133,7 +135,10 @@ if __name__ == '__main__':
                 #event_charges1 = ch_data[channel1][f'lyso_charge']
                 #event_charges2 = ch_data[channel2][f'lyso_charge']
                 event_charges_raw = 0.5*(event_charges1+event_charges2)
-                event_charges = 0.5*(event_charges1/gMasterCalib.Eval(ch) + event_charges2/gMasterCalib.Eval(31-ch))
+                if args.useCalib:
+                    event_charges = 0.5*(event_charges1/gMasterCalib.Eval(ch) + event_charges2/gMasterCalib.Eval(31-ch))
+                else:
+                    event_charges = 0.5*(event_charges1 + event_charges2)
                 #source_bins = plot_utils.get_bins(event_charges, None)
                 #hsource = ROOT.TH1D(f"lyso_bar%02d"%ch, f"LYSO Charge Integral for ch%02d"%ch, int(1.*len(source_bins)), min(0,source_bins[0]), max(1400, source_bins[-1]))
                 #hsource_raw = ROOT.TH1D(f"lysoRaw_bar%02d"%ch, f"LYSO Charge Integral Raw for ch%02d"%ch, int(1.*len(source_bins)), min(0,source_bins[0]), max(1400, source_bins[-1]))
@@ -160,7 +165,10 @@ if __name__ == '__main__':
                 offset_selection = no_events1 & no_neighbor_events1 & no_events2 & no_neighbor_events2
                 offset_charges1 = ch_data[channel1][f'lyso_charge'][offset_selection]
                 offset_charges2 = ch_data[channel2][f'lyso_charge'][offset_selection]
-                offset_charges = 0.5*(offset_charges1/gMasterCalib.Eval(ch)+offset_charges2/gMasterCalib.Eval(31-ch))
+                if args.useCalib:
+                    offset_charges = 0.5*(offset_charges1/gMasterCalib.Eval(ch)+offset_charges2/gMasterCalib.Eval(31-ch))
+                else:
+                    offset_charges = 0.5*(offset_charges1 + offset_charges2)
                 offset_bins = plot_utils.get_bins(offset_charges)
                 #hoffset = ROOT.TH1D(f"lyso_bar%02d_pedestal"%ch, f"Pedestal LYSO Charge Integral for bar%02d"%ch, len(offset_bins), offset_bins[0], offset_bins[-1])
                 hoffset = ROOT.TH1D(f"lyso_bar%02d_pedestal"%ch, f"Pedestal LYSO Charge Integral for bar%02d"%ch, 400, -100., 300.)
@@ -232,7 +240,10 @@ if __name__ == '__main__':
                 # channels.
                 selection = np.array(ch_data[channel][f'lyso_charge'] >= trigger_charge[ch//8]/2)
                 event_charges_raw = ch_data[channel][f'lyso_charge'][selection]
-                event_charges = event_charges_raw / gMasterCalib.Eval(ch)
+                if args.useCalib:
+                    event_charges = event_charges_raw / gMasterCalib.Eval(ch)
+                else:
+                    event_charges = event_charges_raw
                 #source_bins = plot_utils.get_bins(event_charges, None)
                 #hsource_raw = ROOT.TH1D(f"lysoRaw_ch%02d"%ch, f"LYSO Raw Charge Integral for ch%02d"%ch, int(1.*len(source_bins)), min(0,source_bins[0]), max(1400,source_bins[-1]))
                 #hsource = ROOT.TH1D(f"lyso_ch%02d"%ch, f"LYSO Charge Integral for ch%02d"%ch, int(1.*len(source_bins)), min(0,source_bins[0]), max(1400,source_bins[-1]))
