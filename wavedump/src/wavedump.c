@@ -1954,8 +1954,8 @@ int main(int argc, char *argv[])
     }
 
     /* Open the digitizer. */
-    ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, 0, 0, 0xDDDD0000, &handle);
-
+    //ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, 0, 0, 0xDDDD0000, &handle);
+    ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB, 0, 0, 0, &handle);
     if (ret) {
         fprintf(stderr, "unable to open digitizer! Is it turned on?\n");
         exit(1);
