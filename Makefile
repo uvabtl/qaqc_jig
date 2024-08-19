@@ -1,4 +1,5 @@
 all: wavedump/src/wavedump
+PREFIX=/usr/local/bin
 
 CAENUSBdrvB-1.5.4/CAENUSBdrvB.o:
 	$(MAKE) -C CAENUSBdrvB-1.5.4
@@ -15,3 +16,6 @@ wavedump/src/wavedump: wavedump/src/Makefile wavedump/src/wavedump.c
 install: CAENUSBdrvB-1.5.4/CAENUSBdrvB.o
 	$(MAKE) -C wavedump install
 	$(MAKE) -C python install
+
+clean:
+	rm $(PREFIX)/wavedump
