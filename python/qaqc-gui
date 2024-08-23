@@ -666,7 +666,15 @@ def poll_single_module(client, module):
             print_warning(str(e))
             return
 
-        values['temp%s' % key] = thermistor_value
+        try:
+            sf_file = open("/home/qaqcbtl/qaqc_jig/RTD_cal/combined.json")
+            rtd_sfs = json.load(sf_file)
+            rtd_sf = rtd_sfs[f"{module}{key}"]["scale_factor"]
+        except:
+            print("RTD scale factor file not found :( Setting SFs to 1")
+            rtd_sf = 1
+
+        values['temp%s' % key] = thermistor_value*rtd_sf
         values['tec%s' % key] = tec_value
 
     return values
