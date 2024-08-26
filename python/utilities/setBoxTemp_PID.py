@@ -1,34 +1,17 @@
 #! /usr/bin/python3
 
+import os
 import sys
 import time
+import numpy as np
 from optparse import OptionParser
 from datetime import datetime
 from simple_pid import PID
 from subprocess import Popen, PIPE
 import subprocess
 import logging
-
-sys.path.append('/home/cmsdaq/DAQ/LAUDAChiller')
-from LAUDAChiller import LAUDAChiller
-
-
-
-def read_box_temp():
-    now = datetime.now()
-    
-    out = subprocess.run(['ssh', 'cmsdaq@raspcmsroma01', 'ls --full-time /home/cmsdaq/SHT40/temp.txt'],stdout=subprocess.PIPE)
-    result = out.stdout.decode('utf-8').rstrip('\n').split()
-    file_time = datetime.strptime(result[5]+" "+result[6].split('.')[0],"%Y-%m-%d %H:%M:%S")
-    
-    out = subprocess.run(['ssh', 'cmsdaq@raspcmsroma01', 'tail -n 1 /home/cmsdaq/SHT40/temp.txt'],stdout=subprocess.PIPE)
-    result = out.stdout.decode('utf-8').rstrip('\n').split(',')
-    
-    if abs(file_time-now).total_seconds() > 60.:
-        raise ValueError("Could not read box temperature")                                                                                                                                                                                                                  
-    else:
-        return result[0]
-
+from Chillers import *
+from Temperatures import *
 
 
 parser = OptionParser()
@@ -46,7 +29,7 @@ if options.debug:
 
 now = datetime.now()
 this_time = now.strftime('%Y-%m-%d_%H:%M:%S')
-logfile = '/home/cmsdaq/.setBoxTemp_PID_%s.log'%this_time
+logfile = os.path.expanduser('~/.setBoxTemp_PID_%s.log'%this_time)
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',filename=logfile,level=logging.INFO)
 
 min_temp = options.target - 6.
@@ -60,18 +43,18 @@ if options.target < min_temp_safe or options.target > max_temp_safe:
     sys.exit(-1)
 
 
-lauda = LAUDAChiller()
-state = lauda.check_state()
+mychiller = Chiller()
+state = mychiller.getState()
 
-logging.info(">>> LAUDAChiller::state: "+str(state))
+logging.info(">>> Chiller::state: "+str(state))
 
-if int(state) == 1:
+if int(state) == 0:
     logging.info("--- powering on the chiller")
-    lauda.set_state('1')
+    mychiller.setState('1')
     time.sleep(5)
-    state = lauda.check_state()
-    logging.info(">>> LAUDAChiller::state: "+str(state))
-    if state == 1:
+    state = mychiller.getState()
+    logging.info(">>> Chiller::state: "+str(state))
+    if state == 0:
         logging.info("### ERROR: chiller did not power on. Exiting...")
         sys.exit(-2)
 
@@ -79,7 +62,7 @@ if int(state) == 1:
 box_temp = 23.
 while True:
     try:
-        box_temp = float(read_box_temp())
+        box_temp = np.mean(read_box_temp())
         break
     except ValueError as e:
         logging.info(e)
@@ -87,11 +70,11 @@ while True:
         continue
 
 
-water_temp = lauda.read_meas_temp()
+water_temp = mychiller.getWaterTemp()
 new_temp = options.initialTemp
 logging.info("--- setting chiller water temperature at "+str(round(float(new_temp),2))+" C   [box temperature: "+str(round(float(box_temp),2))+" C   water temperature: "+str(round(float(water_temp),2))+" C]")
 
-lauda.write_set_temp(new_temp)
+mychiller.setTemp(new_temp)
 sleep_time = options.initialDelay
 logging.info("--- sleeping for "+str(sleep_time)+" s\n")
 sys.stdout.flush()
@@ -106,7 +89,7 @@ pid.output_limits = (min_temp-options.target, max_temp-options.target)
 while True:
     try:
         try:
-            box_temp = float(read_box_temp())
+            box_temp = np.mean(read_box_temp())
         except ValueError as e:
             logging.info(e)
             time.sleep(5)
@@ -122,10 +105,10 @@ while True:
             p, i, d = pid.components
             logging.info("== DEBUG == P=", p, "I=", i, "D=", d)
         
-        water_temp = lauda.read_meas_temp()
+        water_temp = mychiller.getWaterTemp()
         logging.info("--- setting chiller water temperature at "+str(round(float(new_temp), 2))+" C   [box temperature: "+str(round(float(box_temp),2))+" C   water temperature: "+str(round(float(water_temp),2))+" C]")
 
-        lauda.write_set_temp(new_temp)
+        mychiller.setTemp(new_temp)
         sleep_time = 31
         logging.info("--- sleeping for "+str(sleep_time)+" s   [kill at any time with ctrl-C]\n")
         sys.stdout.flush()
@@ -135,10 +118,10 @@ while True:
         break
 
 logging.info("--- powering off the chiller")
-lauda.set_state('0')
+mychiller.setState('0')
 time.sleep(5)
-state = lauda.check_state()
-logging.info(">>> LAUDAChiller::state: "+str(state))
+state = myChiller.getState()
+logging.info(">>> Chiller::state: "+str(state))
 if state == 0:
     logging.info("### ERROR: chiller did not power off. Exiting...")
     sys.exit(-3)

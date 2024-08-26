@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+
 """
 GUI for controlling the Caltech BTL QA/QC jig.
 
 Author: Anthony LaTorre
 Last Updated: Jan 24, 2023
 """
-USE_TTi = True
+
+USE_PSU = True
 USE_CHILLER = True
 
 from btl import Client
@@ -21,11 +23,13 @@ import os
 import h5py
 import sys
 import time
+from mtddb import getSiPMVbd
+if USE_PSU:
+   from utilities import PSUs
+if USE_CHILLER:
+   from utilities import Chillers
+   from utilities import Temperatures   
 
-if USE_TTi:
-   sys.path.append('/home/cmsdaq/DAQ/TXP3510P')
-   from TXP3510PWrapper import TXP3510P
-   
 WAVEDUMP_PROGRAM = 'wavedump'
 INTEGRATE_WAVEFORMS_PROGRAM = 'integrate-waveforms'
 ANALYZE_WAVEFORMS_PROGRAM = 'analyze-waveforms'
@@ -61,7 +65,7 @@ dLcm_intermodule = 5.34 # distance between two modules on the same module board
 dLcm_interboard = 7.76 # distance between two modules from two neighbouring module boards
 
 step_lastposition = 0
-out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+out = Popen(['cat',os.path.expanduser('~/.step_lastposition')],stdout=subprocess.PIPE)
 step_lastposition = int(out.stdout.read().decode().rstrip())
 
 def filename_template(data_path='./', barcode=None, label=None):
@@ -262,22 +266,27 @@ def reanalyze_data():
 
         module_status[i].config(text="Integration successful!")
 
+def get_vbd():
+   # Make sure they entered the barcodes first.
+   for i in range(12):
+      if not module_available[i].get():
+         continue
+      
+      barcode = barcodes[i].get()
+      if barcode == '':
+         print_warning('Need to enter a barcode for module %i\n' % i)
+         return
+
+      vbd = getSiPMVbd.getVbdAve(barcode)
+      vbds[i].set(round(vbd,3))
+      
+   
 def power_on():
     """
     Function to power on the board power supply
     """
-    
-    mytti1 = TXP3510P('/dev/TTi-1')
-    mytti1.setCurrent(2.)
-    mytti1.setVoltage(5.3)
-    mytti1.powerOn()
-    mytti2 = TXP3510P('/dev/TTi-2')
-    mytti2.setCurrent(1.,1)
-    mytti2.setVoltage(12.,1)
-    mytti2.powerOn(1)
-    mytti2.setCurrent(1.,2)
-    mytti2.setVoltage(12.,2)
-    mytti2.powerOn(2)
+
+    mypsu.powerOn()
     
     power_on_button['state'] = tk.DISABLED
     power_off_button['state'] = tk.NORMAL
@@ -286,12 +295,8 @@ def power_off():
     """
     Function to power off the board power supply
     """
-    
-    mytti1 = TXP3510P('/dev/TTi-1')
-    mytti1.powerOff()
-    mytti2 = TXP3510P('/dev/TTi-2')
-    mytti2.powerOff(1)
-    mytti2.powerOff(2)
+
+    mypsu.powerOff()
     
     power_on_button['state'] = tk.NORMAL
     power_off_button['state'] = tk.DISABLED
@@ -301,9 +306,9 @@ def chiller_on():
     Function to turn on the chiller
     """
     
-    proc = Popen(['python3','/home/cmsdaq/DAQ/qaqc_jig/python/utilities/setBoxTemp_PID.py','--target','%f'%(float(chiller_temp_entry.get()))])
+    proc = mychiller.startPIDProcess(float(chiller_temp_entry.get()))
     chiller_pid = proc.pid
-    os.system('echo %d >> /home/cmsdaq/.setBoxTemp_PID.pid'%chiller_pid)
+    os.system('echo %d >> ~/.setBoxTemp_PID.pid'%chiller_pid)
     chiller_on_button.config(text='Chiller is on (PID: %d)'%chiller_pid)
     
     chiller_on_button['state'] = tk.DISABLED
@@ -313,14 +318,13 @@ def chiller_off():
     """
     Function to turn off the chiller
     """
-    
-    out = Popen(['cat','/home/cmsdaq/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
+
+    out = Popen(['cat','~/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
     chiller_pid = int(out.stdout.read().decode().rstrip())
-    os.system('kill -9 %d'%chiller_pid)
-    os.system('rm /home/cmsdaq/.setBoxTemp_PID.pid')
-    out = Popen(['/home/cmsdaq/DAQ/LAUDAChiller/driveChiller.py', '--power-off'],stdout=subprocess.PIPE)
+    mychiller.stopPIDProcess(chiller_pid)
+    os.system('rm ~/.setBoxTemp_PID.pid')
     
-    chiller_on_button.config(text='Chiller on')
+    chiller_on_button.config(text='Start Chiller PID')
     chiller_on_button['state'] = tk.NORMAL
     chiller_off_button['state'] = tk.DISABLED
 
@@ -374,11 +378,11 @@ def take_data():
     
    # Increment the run number
    run = -1
-   with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run') as f:
+   with open('~/.last_run') as f:
       runs = [int(x) for x in next(f).split()]
       run = str(runs[0]+1)
-      os.remove('/home/cmsdaq/DAQ/qaqc_jig/.last_run')
-      with open('/home/cmsdaq/DAQ/qaqc_jig/.last_run','w+') as f:
+      os.remove('~/.last_run')
+      with open('~/.last_run','w+') as f:
          f.write(run)
    run_path = data_path.get() + '/run%04d'%int(run)
    if not exists(run_path) and run_path != '':
@@ -403,9 +407,9 @@ def take_data():
    #             since the above operations have overlooked at least one packet,
    #             and this leftover misaligns later communication.
    if stepper_enable.get():
-      out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+      out = Popen(['cat',os.path.expanduser('~/.step_lastposition')],stdout=subprocess.PIPE)
       step_lastposition = int(out.stdout.read().decode().rstrip())
-      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+      os.system('echo %d > ~/.step_lastposition'%step_lastposition)
       
    # Next, we take the single PE data
    try:
@@ -601,6 +605,9 @@ def take_data():
 
 def poll_single_module(client, module):
     values = {}
+    calib_file = open('RTD_Calibration/RTD_Calibration.json')
+    calib_data = json.load(calib_file)
+    
     # Loop over left and right sides
     for k in range(2):
         # Diagram to help figure out what's going on. It's drawn as if you
@@ -626,8 +633,12 @@ def poll_single_module(client, module):
         key = '_a' if k == 0 else '_b'
 
         try:
-            thermistor_value = query(client, "thermistor_read %i %i" % (bus, thermistor))
-            if DEBUG:
+           calib = calib_data["%d,%d"%(bus,thermistor)][0]
+           if calib is None: calib = 1.
+           thermistor_value = 0.
+           for it in range(10):
+              thermistor_value += calib * query(client, "thermistor_read %i %i" % (bus, thermistor))
+           if DEBUG:
                 thermistor_value = random.uniform(20,30)
         except Exception as e:
             print_warning(str(e))
@@ -641,8 +652,8 @@ def poll_single_module(client, module):
         except Exception as e:
             print_warning(str(e))
             return
-
-        values['temp%s' % key] = thermistor_value
+         
+        values['temp%s' % key] = thermistor_value/10.
         values['tec%s' % key] = tec_value
 
     return values
@@ -680,13 +691,13 @@ def poll():
             print("value = ", value)
             thermistor_text[(i,key)].config(text="%.2f" % value)
 
-def read_dht22():
-    out = Popen(['ssh', 'cmsdaq@raspcmsroma01', 'tail', '-n 1', '/home/cmsdaq/SHT40/temp.txt'],stdout=PIPE)
-    vals = (out.stdout.read().decode('utf-8')).split(',')
-    for i in range(1):
-        dht22_text[(i,'temp')].config(text="%.1f"%float(vals[0+0+2*i]))
-        dht22_text[(i,'hum')].config(text="%.1f"%float(vals[0+1+2*i]))
-    root.after(3000,read_dht22)
+def read_temperatures():
+    if USE_CHILLER:
+       vals = Temperatures.read_box_temp_hum()
+       for i in range(int(len(vals)/2.)):
+          temperatures_text[(i,'temp')].config(text="%.1f"%float(vals[0+0+2*i]))
+          temperatures_text[(i,'hum')].config(text="%.1f"%float(vals[0+1+2*i]))
+       root.after(3000,read_temperatures)
 
 def step_home():
     # Clear error messages
@@ -709,7 +720,7 @@ def step_home():
             if pin17 == 0:
                 print("step_home done")
                 step_lastposition = 0
-                os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+                os.system('echo %d > ~/.step_lastposition'%step_lastposition)
                 break
             time.sleep(10)
         # clearup recvfrom buffer
@@ -724,7 +735,7 @@ def step_home():
 
 def step_module(module_i):
    
-   out = Popen(['cat','/home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'],stdout=subprocess.PIPE)
+   out = Popen(['cat',os.path.expanduser('~/.step_lastposition')],stdout=subprocess.PIPE)
    step_lastposition = int(out.stdout.read().decode().rstrip())
 
    ##module_i = int(module_step_entry.get())
@@ -749,7 +760,7 @@ def step_module(module_i):
          return
 
       step_lastposition = module_i
-      os.system('echo %d > /home/cmsdaq/DAQ/qaqc_jig/.step_lastposition'%step_lastposition)
+      os.system('echo %d > ~/.step_lastposition'%step_lastposition)
 
 def n_boards_changed(*args):
     for i in range(4):
@@ -942,6 +953,13 @@ if __name__ == '__main__':
     stepper_dLperstep.set(str(dLcm_perstep))
     stepper_dLperstep_menu_entry = tk.Entry(frame_menu, textvariable=stepper_dLperstep)
     stepper_dLperstep_menu_entry.grid(row=11,column=1)
+    
+    get_vbd_label = tk.Label(frame_menu, text="Get Vbd from database ")
+    stepper_dLperstep_menu_label.grid(row=11,column=0)
+    stepper_dLperstep = tk.StringVar(frame_menu)
+    stepper_dLperstep.set(str(dLcm_perstep))
+    stepper_dLperstep_menu_entry = tk.Entry(frame_menu, textvariable=stepper_dLperstep)
+    stepper_dLperstep_menu_entry.grid(row=11,column=1)
 
     frame_menu.pack()
     frame_barcodes.pack()
@@ -996,10 +1014,13 @@ if __name__ == '__main__':
     #stepper_enable = tk.IntVar(frame_settings, value=0)
     #stepper_enable_checkbox = tk.Checkbutton(frame_settings, text='Enable Stepper', variable=stepper_enable, onvalue=1, offvalue=0)
     #stepper_enable_checkbox.pack()
+
+    vbd_button = tk.Button(master=frame_buttons2,text="Get Vbd from database", width=25, height=5, command=get_vbd)
+    vbd_button.pack()
     
-    if USE_TTi:
-        mytti3 = TXP3510P('/dev/TTi-1')
-        state = mytti3.getState()
+    if USE_PSU:
+        mypsu = PSUs.PSU()
+        state = mypsu.getState()
         
         power_on_button = tk.Button(master=frame_buttons2,text="Power on", width=25, height=5, command=power_on)
         if state == '0':
@@ -1016,16 +1037,16 @@ if __name__ == '__main__':
         power_off_button.pack()
     
     if USE_CHILLER:
-        out = Popen(['/home/cmsdaq/DAQ/LAUDAChiller/driveChiller.py', '--check-state'],stdout=subprocess.PIPE)
-        state = int(out.stdout.read().decode().rstrip())
+        mychiller = Chillers.Chiller()
+        state = mychiller.getState()
         
         chiller_pid = -1
-        if os.path.isfile('/home/cmsdaq/.setBoxTemp_PID.pid'):
-            out = Popen(['cat','/home/cmsdaq/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
+        if os.path.isfile('~/.setBoxTemp_PID.pid'):
+            out = Popen(['cat',os.path.expanduser('~/.setBoxTemp_PID.pid')],stdout=subprocess.PIPE)
             chiller_pid = int(out.stdout.read().decode().rstrip())
     
         if chiller_pid == -1:
-            chiller_on_button = tk.Button(master=frame_buttons2,text="Chiller on", width=25, height=5, command=chiller_on)
+            chiller_on_button = tk.Button(master=frame_buttons2,text="Start Chiller PID", width=25, height=5, command=chiller_on)
             chiller_on_button['state'] = tk.NORMAL
         else:
             chiller_on_button = tk.Button(master=frame_buttons2,text="Chiller is on (PID: %d)"%chiller_pid, width=25, height=5, command=chiller_on)
@@ -1049,13 +1070,13 @@ if __name__ == '__main__':
         tk.Label(frame_temps,text="temp. (° C)").grid(row=3,column=0)
         tk.Label(frame_temps,text=" hum. (%)").grid(row=4,column=0)    
         
-        dht22_text = {}
-        for i in range(1):
-            dht22_text[(i,'temp')] = tk.Label(frame_temps,text="n/a")
-            dht22_text[(i,'temp')].grid(row=3,column=1+i)
-            dht22_text[(i,'hum')] = tk.Label(frame_temps,text="n/a")
-            dht22_text[(i,'hum')].grid(row=4,column=1+i)
-        read_dht22()
+        temperatures_text = {}
+        for i in range(5):
+            temperatures_text[(i,'temp')] = tk.Label(frame_temps,text="n/a")
+            temperatures_text[(i,'temp')].grid(row=3,column=1+i)
+            temperatures_text[(i,'hum')] = tk.Label(frame_temps,text="n/a")
+            temperatures_text[(i,'hum')].grid(row=4,column=1+i)
+        read_temperatures()
         
         module_step_label = tk.Label(frame_stepper, text="module to go: ")
         module_step_label.grid(row=0,column=0)
