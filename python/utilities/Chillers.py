@@ -2,7 +2,7 @@ import os
 import sys
 from subprocess import Popen, PIPE
 
-BAC = "Milano"
+BAC = "UVA"
 
 if BAC == "CERN":
     print()

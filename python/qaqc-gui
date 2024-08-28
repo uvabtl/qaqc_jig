@@ -7,8 +7,8 @@ Author: Anthony LaTorre
 Last Updated: Jan 24, 2023
 """
 
-USE_PSU = True
-USE_CHILLER = True
+USE_PSU = False
+USE_CHILLER = False
 
 from btl import Client
 import tkinter as tk
@@ -65,7 +65,7 @@ dLcm_intermodule = 5.34 # distance between two modules on the same module board
 dLcm_interboard = 7.76 # distance between two modules from two neighbouring module boards
 
 step_lastposition = 0
-out = Popen(['cat',os.path.expanduser('~/.step_lastposition')],stdout=subprocess.PIPE)
+out = Popen(['cat',os.path.expanduser('/home/qaqcbtl/qaqc_jig/.step_lastposition')],stdout=subprocess.PIPE)
 step_lastposition = int(out.stdout.read().decode().rstrip())
 
 def filename_template(data_path='./', barcode=None, label=None):
