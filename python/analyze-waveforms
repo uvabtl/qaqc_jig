@@ -59,12 +59,16 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--slot', type=int, default=-1, help='which slot was the module in')
     args = parser.parse_args()
 
-    
-    calib_file = ROOT.TFile("/home/cmsdaq/DAQ/qaqc_calibration/master_calib.root", "READ")
+
+    try:
+        calib_file = ROOT.TFile("/home/cmsdaq/DAQ/qaqc_calibration/master_calib.root", "READ")
+    except OSError as e:
+        print(e)
+        calib_file = None
     gMasterCalib_spe = None
     gMasterCalib_lyso = None
     print(args.slot,args.plot)
-    if args.slot >= 0:
+    if args.slot >= 0 and calib_file is not None:
         gMasterCalib_spe = calib_file.Get("g_spe_slot%d"%args.slot)
         gMasterCalib_lyso = calib_file.Get("g_lyso_slot%d"%args.slot)
     
