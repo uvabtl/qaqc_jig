@@ -47,7 +47,7 @@ class Chiller:
     
     def startPIDProcess(self, temp):
         if BAC == "Milano":
-            proc = Popen(['python3','/home/cmsdaq/DAQ/qaqc_jig/python/utilities/setBoxTemp_PID.py','--target','%f'%temp])
+            proc = Popen(['nohup','python3','/home/cmsdaq/DAQ/qaqc_jig/python/utilities/setBoxTemp_PID.py','--target','%f'%temp,'&'])
             return proc
         if BAC == "CERN":
             print()
@@ -55,7 +55,7 @@ class Chiller:
     def stopPIDProcess(self,pid):
         if BAC == "Milano":
             os.system('kill -9 %d'%pid)
-            self.chiller.set_state(0)
+            self.chiller.set_state('0')
         if BAC == "CERN":
             print()
             

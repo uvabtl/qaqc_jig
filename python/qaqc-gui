@@ -23,7 +23,7 @@ import os
 import h5py
 import sys
 import time
-from mtddb import getSiPMVbd
+from btl_scripts import getSiPMVbd
 if USE_PSU:
    from utilities import PSUs
 if USE_CHILLER:
@@ -319,7 +319,7 @@ def chiller_off():
     Function to turn off the chiller
     """
 
-    out = Popen(['cat','~/.setBoxTemp_PID.pid'],stdout=subprocess.PIPE)
+    out = Popen(['cat',os.path.expanduser('~/.setBoxTemp_PID.pid')],stdout=subprocess.PIPE)
     chiller_pid = int(out.stdout.read().decode().rstrip())
     mychiller.stopPIDProcess(chiller_pid)
     os.system('rm ~/.setBoxTemp_PID.pid')
@@ -378,11 +378,11 @@ def take_data():
     
    # Increment the run number
    run = -1
-   with open('~/.last_run') as f:
+   with open(os.path.expanduser('~/.last_run')) as f:
       runs = [int(x) for x in next(f).split()]
       run = str(runs[0]+1)
-      os.remove('~/.last_run')
-      with open('~/.last_run','w+') as f:
+      os.remove(os.path.expanduser('~/.last_run'))
+      with open(os.path.expanduser('~/.last_run'),'w+') as f:
          f.write(run)
    run_path = data_path.get() + '/run%04d'%int(run)
    if not exists(run_path) and run_path != '':
@@ -1041,10 +1041,10 @@ if __name__ == '__main__':
         state = mychiller.getState()
         
         chiller_pid = -1
-        if os.path.isfile('~/.setBoxTemp_PID.pid'):
+        if os.path.isfile(os.path.expanduser('~/.setBoxTemp_PID.pid')):
             out = Popen(['cat',os.path.expanduser('~/.setBoxTemp_PID.pid')],stdout=subprocess.PIPE)
             chiller_pid = int(out.stdout.read().decode().rstrip())
-    
+            
         if chiller_pid == -1:
             chiller_on_button = tk.Button(master=frame_buttons2,text="Start Chiller PID", width=25, height=5, command=chiller_on)
             chiller_on_button['state'] = tk.NORMAL
@@ -1054,7 +1054,7 @@ if __name__ == '__main__':
         chiller_on_button.pack()
         
         chiller_off_button = tk.Button(master=frame_buttons2,text="Chiller off", width=25, height=5, command=chiller_off)
-        if state == 1:
+        if state == '0':
             chiller_off_button['state'] = tk.DISABLED
         else:
             chiller_off_button['state'] = tk.NORMAL

@@ -33,20 +33,19 @@ void SetDefaultConfiguration(WaveDumpConfig_t *WDcfg) {
     int i, j;
 
     WDcfg->RecordLength = (1024*16);
-	WDcfg->PostTrigger = 50;
-	WDcfg->NumEvents = 1023;
-	WDcfg->EnableMask = 0xFFFF;
-	WDcfg->GroupEnableMask = 0x3;
-	WDcfg->GWn = 0;
+    WDcfg->PostTrigger = 50;
+    WDcfg->NumEvents = 1023;
+    WDcfg->EnableMask = 0xFFFF;
+    WDcfg->GWn = 0;
     WDcfg->ExtTriggerMode = CAEN_DGTZ_TRGMODE_ACQ_ONLY;
     WDcfg->InterruptNumEvents = 0;
     WDcfg->TestPattern = 0;
-	WDcfg->DecimationFactor = 1;
+    WDcfg->DecimationFactor = 1;
     WDcfg->DesMode = 0;
-	WDcfg->FastTriggerMode = 0; 
+    WDcfg->FastTriggerMode = 0; 
     WDcfg->FastTriggerEnabled = 0; 
-	WDcfg->FPIOtype = 0;
-
+    WDcfg->FPIOtype = 0;
+    
 	strcpy(WDcfg->GnuPlotPath, GNUPLOT_DEFAULT_PATH);
 	for(i=0; i<MAX_SET; i++) {
 		WDcfg->PulsePolarity[i] = CAEN_DGTZ_PulsePolarityPositive;

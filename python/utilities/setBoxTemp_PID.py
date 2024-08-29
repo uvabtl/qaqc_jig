@@ -120,7 +120,7 @@ while True:
 logging.info("--- powering off the chiller")
 mychiller.setState('0')
 time.sleep(5)
-state = myChiller.getState()
+state = mychiller.getState()
 logging.info(">>> Chiller::state: "+str(state))
 if state == 0:
     logging.info("### ERROR: chiller did not power off. Exiting...")
