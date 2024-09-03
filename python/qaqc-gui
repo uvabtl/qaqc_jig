@@ -8,7 +8,7 @@ Last Updated: Jan 24, 2023
 """
 
 USE_PSU = False
-USE_CHILLER = False
+USE_CHILLER = True
 
 from btl import Client
 import tkinter as tk
@@ -23,6 +23,7 @@ import os
 import h5py
 import sys
 import time
+import datetime
 from btl_scripts import getSiPMVbd
 if USE_PSU:
    from utilities import PSUs
@@ -58,6 +59,8 @@ BOARD_ADDRESSES = {
 }
 
 RELAYS = [0,1,2,3,4,5]
+
+temp_log_path = "/home/qaqcbtl/qaqc_jig/module_temps.log"
 
 # Stepper motor
 dLcm_perstep = 0.005 # distance per step, configurable in gui pannel (stepper_dLperstep)
@@ -306,7 +309,13 @@ def chiller_on():
     """
     Function to turn on the chiller
     """
-    
+
+    if not poll():
+        chiller_on_button.config(text="Can't start PID because poll didn't return legit module temps")
+        return
+
+    log_module_temps()
+
     proc = mychiller.startPIDProcess(float(chiller_temp_entry.get()))
     chiller_pid = proc.pid
     os.system('echo %d >> ~/.setBoxTemp_PID.pid'%chiller_pid)
@@ -411,6 +420,8 @@ def take_data():
    except:
       print_warning("Not a valid data path: %s\n" % run_path)
       return
+
+   poll()
    
    # First, we try to get the stepper to the home position
    #
@@ -440,7 +451,7 @@ def take_data():
    
    # Now, we turn them on one by one and take data
    for i in range(12):
-      
+
       if not module_available[i].get():
          entry.insert(tk.END, "Skipping module %i\n" % i)
          continue
@@ -467,6 +478,8 @@ def take_data():
       if exists(filename):
          print("deleting %s" % filename)
          os.unlink(filename)
+
+      poll()
       
       # Move the stepper motor to the position of the module
       if stepper_enable.get():
@@ -515,7 +528,9 @@ def take_data():
          except Exception as e:
             print_warning(str(e))
             return
-         
+
+         poll()
+
          entry.insert(tk.END, 'Taking spe events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
          entry.update()
@@ -525,7 +540,7 @@ def take_data():
          #if run_command([WAVEDUMP_PROGRAM,'-t','self','-l','spe','--channel-map',j % 2,'-n',n_spe_events.get(),'-o',filename,'--threshold',-0.05], progress_bar=i):
             hv_off(client)
             return
-         
+
          # Turn the attenuation on to take source data
          try:
             query(client, "set_attenuation on")
@@ -539,6 +554,8 @@ def take_data():
             print_warning(str(e))
             return
          
+         poll()
+
          entry.insert(tk.END, 'Taking lyso events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
          entry.update()
@@ -570,6 +587,7 @@ def take_data():
             except Exception as e:
                print_warning(str(e))
                return
+
          
       info = poll_single_module(client,i)
       
@@ -581,6 +599,8 @@ def take_data():
          f.attrs['institution'] = assembly_center.get()
       
       module_status[i].config(text="Data taking done")
+
+      poll()
       
       # Analyze data now
       filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'.hdf5'
@@ -650,10 +670,7 @@ def poll_single_module(client, module):
         key = '_a' if k == 0 else '_b'
 
         try:
-           # temporarily remove calibration read as it's causing the gui to hang
-           #calib = calib_data["%d,%d"%(bus,thermistor)][0]
-           calib = None
-           if calib is None: calib = 1.
+           calib = calib_data[f"{module}{key}"]["scale_factor"]
            thermistor_value = 0.
            for it in range(10):
               thermistor_value += calib * query(client, "thermistor_read %i %i" % (bus, thermistor))
@@ -686,6 +703,11 @@ def poll():
 
     client = Client(ip_address.get())
 
+    os.system(f"echo >> {temp_log_path}")
+    time_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(time_string)
+    os.system(f"echo -n {time_string} >> {temp_log_path}")
+
     for i in range(12):
         if not module_available[i].get():
             print("Skipping module %i" % i)
@@ -705,10 +727,17 @@ def poll():
         if values is None:
             return
 
+        legit_temps = False
         for key, value in values.items():
             print("i, key = ", i, key)
             print("value = ", value)
             thermistor_text[(i,key)].config(text="%.2f" % value)
+            if key in ["temp_a", "temp_b"] and 10 < value < 40:
+                os.system(f"echo -n ' {value:04.2f}' >> {temp_log_path}")
+                legit_temps = True
+
+    if legit_temps:
+        return True
 
 def read_temperatures():
     if USE_CHILLER:
@@ -717,6 +746,10 @@ def read_temperatures():
           temperatures_text[(i,'temp')].config(text="%.1f"%float(vals[0+0+2*i]))
           temperatures_text[(i,'hum')].config(text="%.1f"%float(vals[0+1+2*i]))
        root.after(3000,read_temperatures)
+
+def log_module_temps():
+    poll()
+    root.after(60000, log_module_temps)
 
 def step_home():
     # Clear error messages
@@ -1062,6 +1095,8 @@ if __name__ == '__main__':
         chiller_pid = -1
         if os.path.isfile(os.path.expanduser('~/.setBoxTemp_PID.pid')):
             out = Popen(['cat',os.path.expanduser('~/.setBoxTemp_PID.pid')],stdout=subprocess.PIPE)
+            print(out.stdout.name)
+            #print(out.stdout.read().decode())
             chiller_pid = int(out.stdout.read().decode().rstrip())
             
         if chiller_pid == -1:
@@ -1095,7 +1130,7 @@ if __name__ == '__main__':
             temperatures_text[(i,'temp')].grid(row=3,column=1+i)
             temperatures_text[(i,'hum')] = tk.Label(frame_temps,text="n/a")
             temperatures_text[(i,'hum')].grid(row=4,column=1+i)
-        read_temperatures()
+        #read_temperatures()
         
         module_step_label = tk.Label(frame_stepper, text="module to go: ")
         module_step_label.grid(row=0,column=0)
