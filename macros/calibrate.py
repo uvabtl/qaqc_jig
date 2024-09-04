@@ -14,13 +14,20 @@ import tdrstyle
 
 from typing import NamedTuple
 
+BAC = "UVA"
 
+good_runs = [234]
 
+if BAC == "Milano":
+    data_path = '/data1/SMQAQC/PRODUCTION/'
+    selections = ['GOOD']
+    plotDir = '/data1/html/data1/SMQAQC/PRODUCTION/calibrationPlots_run0050-run0056_calib/'
+    #plotDir = '/data1/html/data1/SMQAQC/PRODUCTION/calibrationPlots_run0057-run0062/'
+elif BAC == "UVA":
+    data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
+    selections = ['GOOD']
+    plotDir = '/var/www/html/data/production/calibrationPlots_run0234_calib/'
 
-data_path = '/data1/SMQAQC/PRODUCTION/'
-selections = ['GOOD']
-plotDir = '/data1/html/data1/SMQAQC/PRODUCTION/calibrationPlots_run0050-run0056_calib/'
-#plotDir = '/data1/html/data1/SMQAQC/PRODUCTION/calibrationPlots_run0057-run0062/'
 
 if not os.path.isdir(plotDir):
     os.mkdir(plotDir)
@@ -68,21 +75,21 @@ for inputFile in inputFiles:
             slot += 1
     modules.append((module,run))
     params[(module,run)] = [inputFile,slot,'GOOD']
-    #print(module,run,params[(module,run)],config)
+    print(module,run,params[(module,run)],config)
 
 bad_modules = []
-bad_modules.append('32110020000004')
-bad_modules.append('32110020000005')
-bad_modules.append('32110020000009')
-bad_modules.append('32110020000018')
-bad_modules.append('32110020000022')
-bad_modules.append('32110020000024')
-bad_modules.append('32110020000025')
-bad_modules.append('32110020000026')
-bad_modules.append('32110020000034')
-bad_modules.append('32110020000035')
-bad_modules.append('32110020000037')
-bad_modules.append('32110020000040')
+#bad_modules.append('32110020000004')
+#bad_modules.append('32110020000005')
+#bad_modules.append('32110020000009')
+#bad_modules.append('32110020000018')
+#bad_modules.append('32110020000022')
+#bad_modules.append('32110020000024')
+#bad_modules.append('32110020000025')
+#bad_modules.append('32110020000026')
+#bad_modules.append('32110020000034')
+#bad_modules.append('32110020000035')
+#bad_modules.append('32110020000037')
+#bad_modules.append('32110020000040')
 
 
 
@@ -109,10 +116,8 @@ for key in modules:
     #        if selection in param:
     #            tempAccept = 1
     #    accept *= tempAccept
-    if run < 50 or run > 56:
+    if run not in good_runs:
         accept = 0
-    #if run < 57:
-    #    accept = 0
     if accept == 0:
         continue
     print(module,run,param)
@@ -152,10 +157,8 @@ for key in modules:
     #    accept *= tempAccept
     if module in bad_modules:
         accept = 0
-    if run < 50 or run > 56:
+    if run not in good_runs:
         accept = 0
-    #if run < 57:
-    #    accept = 0
     if accept == 0:
         continue
     print(module,run,param)
@@ -185,8 +188,8 @@ for key in modules:
 c = ROOT.TCanvas('c_spe_vs_slot','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-p_spe_L_vs_slot.Scale(1./p_spe_L_vs_slot.GetBinContent(p_spe_L_vs_slot.FindBin(2.)))
-p_spe_R_vs_slot.Scale(1./p_spe_R_vs_slot.GetBinContent(p_spe_R_vs_slot.FindBin(2.)))
+p_spe_L_vs_slot.Scale(1./(p_spe_L_vs_slot.GetBinContent(p_spe_L_vs_slot.FindBin(2.)) + 1e-16))
+p_spe_R_vs_slot.Scale(1./(p_spe_R_vs_slot.GetBinContent(p_spe_R_vs_slot.FindBin(2.)) + 1e-16))
 p_spe_L_vs_slot.SetTitle(';slot;spe charge [a.u.]')
 p_spe_L_vs_slot.GetYaxis().SetRangeUser(0.95,1.05)
 p_spe_L_vs_slot.SetMarkerStyle(20)
@@ -216,8 +219,8 @@ c.Print('%s/h_spe_LR_ch.png'%plotDir)
 c = ROOT.TCanvas('c_lyso_vs_slot','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-p_lyso_L_vs_slot.Scale(1./p_lyso_L_vs_slot.GetBinContent(p_lyso_L_vs_slot.FindBin(2.)))
-p_lyso_R_vs_slot.Scale(1./p_lyso_R_vs_slot.GetBinContent(p_lyso_R_vs_slot.FindBin(2.)))
+p_lyso_L_vs_slot.Scale(1./(p_lyso_L_vs_slot.GetBinContent(p_lyso_L_vs_slot.FindBin(2.)) + 1e-16))
+p_lyso_R_vs_slot.Scale(1./(p_lyso_R_vs_slot.GetBinContent(p_lyso_R_vs_slot.FindBin(2.)) + 1e-16))
 p_lyso_L_vs_slot.SetTitle(';slot;lyso charge [a.u.]')
 p_lyso_L_vs_slot.GetYaxis().SetRangeUser(0.90,1.05)
 p_lyso_L_vs_slot.SetMarkerStyle(20)
