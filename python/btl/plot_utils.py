@@ -125,7 +125,7 @@ def plot_hist(h, path=None, filename=None, logy=False):
             os.makedirs("%s/%s"%(path,root))
         
         #print('Printing plots to file: %s %s' % (path, root))
-        c.Print("%s/%s/%s.pdf" % (path, root, h.GetName()))
+        #c.Print("%s/%s/%s.pdf" % (path, root, h.GetName()))
         c.Print("%s/%s/%s.png" % (path, root, h.GetName()))
 
 
@@ -176,7 +176,7 @@ def plot_graph(g, path=None, filename=None, xMin=-1., xMax=32., yMin=-1., yMax=-
         root, ext = os.path.splitext(filename)
         if not os.path.isdir("%s/%s"%(path,root)):
             os.mkdir("%s/%s"%(path,root))
-        c.Print("%s/%s/%s.pdf" % (path, root, g.GetName()))
+        #c.Print("%s/%s/%s.pdf" % (path, root, g.GetName()))
         c.Print("%s/%s/%s.png" % (path, root, g.GetName()))
 
 
@@ -253,5 +253,5 @@ def plot_graph_bars(g_L, g_R, g_A, path=None, filename=None, graphname='graph', 
         root, ext = os.path.splitext(filename)
         if not os.path.isdir("%s/%s"%(path,root)):
             os.mkdir("%s/%s"%(path,root))
-        c.Print("%s/%s/%s.pdf" % (path, root, graphname))
+        #c.Print("%s/%s/%s.pdf" % (path, root, graphname))
         c.Print("%s/%s/%s.png" % (path, root, graphname))
