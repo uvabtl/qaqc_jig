@@ -16,7 +16,15 @@ from typing import NamedTuple
 
 BAC = "UVA"
 
-good_runs = [234]
+good_runs = [
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+]
 
 if BAC == "Milano":
     data_path = '/data1/SMQAQC/PRODUCTION/'
@@ -26,7 +34,7 @@ if BAC == "Milano":
 elif BAC == "UVA":
     data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
     selections = ['GOOD']
-    plotDir = '/var/www/html/data/production/calibrationPlots_run0234_calib/'
+    plotDir = '/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/'
 
 
 if not os.path.isdir(plotDir):
@@ -94,12 +102,12 @@ bad_modules = []
 
 
 
-p_spe_L_vs_slot = ROOT.TProfile('p_spe_L_vs_slot','',6,-0.5,5.5)
-p_spe_R_vs_slot = ROOT.TProfile('p_spe_R_vs_slot','',6,-0.5,5.5)
+p_spe_L_vs_slot = ROOT.TProfile('p_spe_L_vs_slot','',12,-0.5,11.5)
+p_spe_R_vs_slot = ROOT.TProfile('p_spe_R_vs_slot','',12,-0.5,11.5)
 p_spe_vs_ampli = ROOT.TProfile('p_spe_vs_ampli','',16,-0.5,15.5)
 
-p_lyso_L_vs_slot = ROOT.TProfile('p_lyso_L_vs_slot','',6,-0.5,5.5)
-p_lyso_R_vs_slot = ROOT.TProfile('p_lyso_R_vs_slot','',6,-0.5,5.5)
+p_lyso_L_vs_slot = ROOT.TProfile('p_lyso_L_vs_slot','',12,-0.5,11.5)
+p_lyso_R_vs_slot = ROOT.TProfile('p_lyso_R_vs_slot','',12,-0.5,11.5)
 p_lyso_vs_ampli = ROOT.TProfile('p_lyso_vs_ampli','',16,-0.5,15.5)
 
 
@@ -188,10 +196,10 @@ for key in modules:
 c = ROOT.TCanvas('c_spe_vs_slot','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-p_spe_L_vs_slot.Scale(1./(p_spe_L_vs_slot.GetBinContent(p_spe_L_vs_slot.FindBin(2.)) + 1e-16))
-p_spe_R_vs_slot.Scale(1./(p_spe_R_vs_slot.GetBinContent(p_spe_R_vs_slot.FindBin(2.)) + 1e-16))
+p_spe_L_vs_slot.Scale(1./p_spe_L_vs_slot.GetBinContent(p_spe_L_vs_slot.FindBin(2.)))
+p_spe_R_vs_slot.Scale(1./p_spe_R_vs_slot.GetBinContent(p_spe_R_vs_slot.FindBin(2.)))
 p_spe_L_vs_slot.SetTitle(';slot;spe charge [a.u.]')
-p_spe_L_vs_slot.GetYaxis().SetRangeUser(0.95,1.05)
+p_spe_L_vs_slot.GetYaxis().SetRangeUser(0.90,1.10)
 p_spe_L_vs_slot.SetMarkerStyle(20)
 p_spe_L_vs_slot.SetMarkerSize(1.2)
 p_spe_L_vs_slot.SetMarkerColor(ROOT.kRed)
@@ -209,7 +217,7 @@ c = ROOT.TCanvas('c_spe_vs_ampli','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
 p_spe_vs_ampli.SetTitle(';amplifier channel;a.u.')
-p_spe_vs_ampli.GetYaxis().SetRangeUser(0.95,1.05)
+p_spe_vs_ampli.GetYaxis().SetRangeUser(0.90,1.10)
 p_spe_vs_ampli.Draw()
 c.Print('%s/h_spe_LR_ch.png'%plotDir)
 
@@ -219,10 +227,10 @@ c.Print('%s/h_spe_LR_ch.png'%plotDir)
 c = ROOT.TCanvas('c_lyso_vs_slot','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-p_lyso_L_vs_slot.Scale(1./(p_lyso_L_vs_slot.GetBinContent(p_lyso_L_vs_slot.FindBin(2.)) + 1e-16))
-p_lyso_R_vs_slot.Scale(1./(p_lyso_R_vs_slot.GetBinContent(p_lyso_R_vs_slot.FindBin(2.)) + 1e-16))
+p_lyso_L_vs_slot.Scale(1./p_lyso_L_vs_slot.GetBinContent(p_lyso_L_vs_slot.FindBin(2.)))
+p_lyso_R_vs_slot.Scale(1./p_lyso_R_vs_slot.GetBinContent(p_lyso_R_vs_slot.FindBin(2.)))
 p_lyso_L_vs_slot.SetTitle(';slot;lyso charge [a.u.]')
-p_lyso_L_vs_slot.GetYaxis().SetRangeUser(0.90,1.05)
+p_lyso_L_vs_slot.GetYaxis().SetRangeUser(0.90,1.10)
 p_lyso_L_vs_slot.SetMarkerStyle(20)
 p_lyso_L_vs_slot.SetMarkerSize(1.2)
 p_lyso_L_vs_slot.SetMarkerColor(ROOT.kRed)
@@ -240,7 +248,7 @@ c = ROOT.TCanvas('c_lyso_vs_ampli','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
 p_lyso_vs_ampli.SetTitle(';amplifier channel;a.u.')
-p_lyso_vs_ampli.GetYaxis().SetRangeUser(0.95,1.05)
+p_lyso_vs_ampli.GetYaxis().SetRangeUser(0.90,1.10)
 p_lyso_vs_ampli.Draw()
 c.Print('%s/h_lyso_LR_ch.png'%plotDir)
 

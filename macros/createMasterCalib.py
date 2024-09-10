@@ -17,8 +17,8 @@ from typing import NamedTuple
 
 
 
-inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0234_calib/calibrate.root','READ')
-inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0234_calib/calibrate.root','READ')
+inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/calibrate.root','READ')
+inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/calibrate.root','READ')
 
 p_spe_L_vs_slot = inputfile_vs_slot.Get('p_spe_L_vs_slot')
 p_spe_R_vs_slot = inputfile_vs_slot.Get('p_spe_R_vs_slot')
@@ -41,21 +41,21 @@ for slot in range(12):
     g_spe[slot] = ROOT.TGraph()
     g_lyso[slot] = ROOT.TGraph()
     
-    slot_L_spe_calib = 1. / (p_spe_L_vs_slot.GetBinContent(slot+1) + 1e-16)
-    slot_R_spe_calib = 1. / (p_spe_R_vs_slot.GetBinContent(slot+1) + 1e-16)
-    slot_L_lyso_calib = 1. / (p_lyso_L_vs_slot.GetBinContent(slot+1) + 1e-16)
-    slot_R_lyso_calib = 1. / (p_lyso_R_vs_slot.GetBinContent(slot+1) + 1e-16)
+    slot_L_spe_calib = 1. / p_spe_L_vs_slot.GetBinContent(slot+1)
+    slot_R_spe_calib = 1. / p_spe_R_vs_slot.GetBinContent(slot+1)
+    slot_L_lyso_calib = 1. / p_lyso_L_vs_slot.GetBinContent(slot+1)
+    slot_R_lyso_calib = 1. / p_lyso_R_vs_slot.GetBinContent(slot+1)
     
     for ch in range(32):
         
         if ch < 16:
-            ampli_spe_calib = 1. / (p_spe_vs_ampli.GetBinContent(ch%8+1) + 1e-16)
-            ampli_lyso_calib = 1. / (p_lyso_vs_ampli.GetBinContent(ch%8+1) + 1e-16)
+            ampli_spe_calib = 1. / p_spe_vs_ampli.GetBinContent(ch%8+1)
+            ampli_lyso_calib = 1. / p_lyso_vs_ampli.GetBinContent(ch%8+1)
             g_spe[slot].SetPoint(ch,ch,slot_L_spe_calib*ampli_spe_calib)
             g_lyso[slot].SetPoint(ch,ch,slot_L_lyso_calib*ampli_lyso_calib)
         else:
-            ampli_spe_calib = 1. / (p_spe_vs_ampli.GetBinContent(15-ch%8+1) + 1e-16)
-            ampli_lyso_calib = 1. / (p_lyso_vs_ampli.GetBinContent(15-ch%8+1) + 1e-16)
+            ampli_spe_calib = 1. / p_spe_vs_ampli.GetBinContent(15-ch%8+1)
+            ampli_lyso_calib = 1. / p_lyso_vs_ampli.GetBinContent(15-ch%8+1)
             g_spe[slot].SetPoint(ch,ch,slot_R_spe_calib*ampli_spe_calib)
             g_lyso[slot].SetPoint(ch,ch,slot_R_lyso_calib*ampli_lyso_calib)
 
