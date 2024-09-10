@@ -67,9 +67,12 @@ for inputFile in inputFiles:
             module = token[7:21] # SM ID
         if 'run' in token:
             run = int(token[3:]) # run number
-    modules.append(module)
+    if module not in modules:
+        modules.append(module)
     params[module] = [inputFile,run,'GOOD']
-#print(modules)
+modules.sort()
+print(modules)
+print(params)
 
 if not os.path.isdir(plotDir):
     os.mkdir(plotDir)
@@ -99,13 +102,11 @@ h_LOmaxvar_ch = ROOT.TH1F('h_LOmaxvar_ch','',50,0.,100.)
 for module in modules:
     param = params[module]
     accept = 1
-    if param[1] < 50: # measurements re-done after changing module boards
+    if param[1] < 250:
         accept = 0 
-    elif param[1] > 56 and param[1] < 63: # uniformity tests
+    elif param[1] > 256:
         accept = 0 
-    elif param[1]>67:
-        accept = 0
-    
+
     #for selection in selections:
     #    tempAccept = 0
     #    for param in params:
