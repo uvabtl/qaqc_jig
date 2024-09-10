@@ -62,7 +62,8 @@ if int(state) == 0:
 box_temp = 23.
 while True:
     try:
-        box_temp = np.mean(read_box_temp())
+        box_temps = read_box_temp()
+        box_temp = np.mean(box_temps)
         break
     except ValueError as e:
         logging.info(e)
@@ -88,11 +89,14 @@ pid.output_limits = (min_temp-options.target, max_temp-options.target)
 
 while True:
     try:
-        try:
-            box_temp = np.mean(read_box_temp())
-        except ValueError as e:
-            logging.info(e)
-            time.sleep(5)
+        box_temps = read_box_temp()
+        if box_temps:
+            print("box_temps is not empty:", box_temps)
+            box_temp = np.mean(box_temps)
+            print("box_temp:", box_temp)
+        else:
+            print("box_temps is empty: {box_temps}")
+            time.sleep(10)
             continue
         
         output = pid(box_temp)
