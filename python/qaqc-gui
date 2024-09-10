@@ -422,6 +422,7 @@ def take_data():
       return
 
    poll()
+   time.sleep(5)
    
    # First, we try to get the stepper to the home position
    #
@@ -480,6 +481,7 @@ def take_data():
          os.unlink(filename)
 
       poll()
+      time.sleep(5)
       
       # Move the stepper motor to the position of the module
       if stepper_enable.get():
@@ -530,6 +532,7 @@ def take_data():
             return
 
          poll()
+         time.sleep(5)
 
          entry.insert(tk.END, 'Taking spe events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
@@ -555,6 +558,7 @@ def take_data():
             return
          
          poll()
+         time.sleep(5)
 
          entry.insert(tk.END, 'Taking lyso events for module %d (%d/2)\n'%(i,j+1))
          entry.yview(tk.END)
@@ -703,14 +707,10 @@ def poll():
 
     client = Client(ip_address.get())
 
-    os.system(f"echo >> {temp_log_path}")
-    time_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(time_string)
-    os.system(f"echo -n {time_string} >> {temp_log_path}")
-
+    legit_temps = ""
     for i in range(12):
         if not module_available[i].get():
-            print("Skipping module %i" % i)
+            #print("Skipping module %i" % i)
             for k in range(2):
                 bus = (i//3)*2 + k
                 thermistor = i % 3
@@ -727,16 +727,17 @@ def poll():
         if values is None:
             return
 
-        legit_temps = False
         for key, value in values.items():
-            print("i, key = ", i, key)
-            print("value = ", value)
+            #print("i, key = ", i, key)
+            #print("value = ", value)
             thermistor_text[(i,key)].config(text="%.2f" % value)
             if key in ["temp_a", "temp_b"] and 10 < value < 40:
-                os.system(f"echo -n ' {value:04.2f}' >> {temp_log_path}")
-                legit_temps = True
+                legit_temps += f" {value:04.2f}"
 
-    if legit_temps:
+    if legit_temps != "":
+        os.system(f"echo >> {temp_log_path}")
+        time_string = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        os.system(f"echo -n {time_string} {legit_temps} >> {temp_log_path}")
         return True
 
 def read_temperatures():
