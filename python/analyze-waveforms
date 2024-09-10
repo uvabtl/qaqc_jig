@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
 
     try:
-        calib_file = ROOT.TFile("/home/cmsdaq/DAQ/qaqc_calibration/master_calib.root", "READ")
+        calib_file = ROOT.TFile("/home/qaqcbtl/qaqc_jig/master_calib.root", "READ")
     except OSError as e:
         print(e)
         calib_file = None

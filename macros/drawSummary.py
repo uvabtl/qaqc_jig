@@ -14,9 +14,9 @@ import tdrstyle
 #from typing import NamedTuple
 
 
-data_path = '/data1/SMQAQC/PRODUCTION/'
+data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/data1/html/data1/SMQAQC/PRODUCTION/summaryPlots_65_SMs_calib/'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_26_SMs_calib/'
 
 
 #set the tdr style

@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(description='Launch reco')
 parser.add_argument("-s", "--submit", help="submit jobs", action='store_true')
 args = parser.parse_args()
 
-path = '/data1/SMQAQC/PRODUCTION/'
+path = './data/production/'
 sourceType = 'cesium'
 
 modules = [
@@ -159,10 +159,57 @@ modules = [
     # ('run0087','module_32110020000080','4'),
     # ('run0087','module_32110020000081','5'),
 
-    ('run0100','module_32110020000144','5'),
+    #('run0248','module_32110020005601','0'),
+    #('run0249','module_32110020005602','1'),
+    #('run0249','module_32110020005603','2'),
+    #('run0249','module_32110020005604','3'),
+    #('run0249','module_32110020005605','4'),
+    #('run0249','module_32110020005606','5'),
+    #('run0249','module_32110020005607','6'),
+    #('run0249','module_32110020005608','7'),
+    #('run0249','module_32110020005609','8'),
+    #('run0249','module_32110020005610','9'),
+    #('run0249','module_32110020005611','10'),
+    #('run0249','module_32110020005612','11'),
+    #('run0250','module_32110020005614','1'),
+    #('run0250','module_32110020005615','2'),
+    #('run0250','module_32110020005616','3'),
+    #('run0250','module_32110020005617','4'),
+    #('run0250','module_32110020005618','5'),
+    #('run0250','module_32110020005619','6'),
+    #('run0250','module_32110020005620','7'),
+    #('run0250','module_32110020005623','8'),
+    #('run0250','module_32110020005624','9'),
+    #('run0250','module_32110020005625','10'),
+    #('run0250','module_32110020005626','11'),
+    #('run0251','module_32110020005613','0'),
+    #('run0252','module_32110020005623','0'),
+    #('run0252','module_32110020005624','1'),
+    #('run0252','module_32110020005625','2'),
+    #('run0252','module_32110020005626','3'),
+    #('run0252','module_32110020005615','4'),
+    #('run0252','module_32110020005616','5'),
+    #('run0252','module_32110020005617','6'),
+    #('run0252','module_32110020005618','7'),
+    #('run0253','module_32110020005619','8'),
+    #('run0253','module_32110020005620','9'),
+    #('run0253','module_32110020005621','10'),
+    #('run0253','module_32110020005622','11'),
+    #('run0254','module_32110020005612','0'),
+    #('run0254','module_32110020005611','1'),
+    #('run0254','module_32110020005610','2'),
+    #('run0254','module_32110020005609','3'),
+    #('run0254','module_32110020005608','4'),
+    #('run0254','module_32110020005607','5'),
+    #('run0254','module_32110020005606','6'),
+    #('run0254','module_32110020005605','7'),
+    #('run0254','module_32110020005604','8'),
+    #('run0254','module_32110020005603','9'),
+    #('run0254','module_32110020005602','10'),
+    ('run0254','module_32110020005601','11'),
 ]
 
 for module in modules:
-    command = './python/analyze-waveforms --slot '+module[2]+' --sourceType %s --print-pdfs \"/var/www/html/\" -o %s/%s_analysis.root %s/%s_integrals.hdf5' % (sourceType,path+module[0],module[1],path+module[0],module[1])
+    command = 'analyze-waveforms --slot '+module[2]+' --sourceType %s --print-pdfs /var/www/html/ -o %s/%s_analysis.root %s/%s_integrals.hdf5' % (sourceType,path+module[0],module[1],path+module[0],module[1])
     print(command)
     if args.submit: os.system(command)
