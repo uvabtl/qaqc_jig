@@ -32,8 +32,8 @@ this_time = now.strftime('%Y-%m-%d_%H:%M:%S')
 logfile = os.path.expanduser('~/.setBoxTemp_PID_%s.log'%this_time)
 logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',filename=logfile,level=logging.INFO)
 
-min_temp = options.target - 6.
-max_temp = options.target + 6. #interval needs to be symmetrical not to diverge when a temp spike occurs
+min_temp = options.target - 8.
+max_temp = options.target + 8. #interval needs to be symmetrical not to diverge when a temp spike occurs
 
 min_temp_safe = 10.
 max_temp_safe = 40.
