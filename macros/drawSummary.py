@@ -16,8 +16,24 @@ import tdrstyle
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_26_SMs_calib/'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_45_SMs_calib/'
 
+good_runs = [
+    248,
+    249,
+    250,
+    254,
+    270,
+    288,
+    301,
+    302,
+    303,
+    307,
+]
+
+modules_to_skip = [
+    "32110020000041",
+]
 
 #set the tdr style
 tdrstyle.setTDRStyle()
@@ -59,7 +75,8 @@ params = {}
 
 # retrieving root files 
 inputFiles = glob.glob(data_path+'/run*/*_analysis.root')
-for inputFile in inputFiles:
+# reverse order to preferentially use later runs
+for inputFile in inputFiles[::-1]:
     tokens = inputFile.split('/')
     run = ''
     for token in tokens:
@@ -67,12 +84,16 @@ for inputFile in inputFiles:
             module = token[7:21] # SM ID
         if 'run' in token:
             run = int(token[3:]) # run number
-    if module not in modules:
+    if (run not in good_runs) or (module in modules_to_skip):
+        continue
+    if module in modules:
+        print(f"{module} already included. Skipping it in run {run}")
+        continue
+    else:
+        print(f"Adding {module} from run {run}")
         modules.append(module)
     params[module] = [inputFile,run,'GOOD']
 modules.sort()
-print(modules)
-print(params)
 
 if not os.path.isdir(plotDir):
     os.mkdir(plotDir)
@@ -102,10 +123,10 @@ h_LOmaxvar_ch = ROOT.TH1F('h_LOmaxvar_ch','',50,0.,100.)
 for module in modules:
     param = params[module]
     accept = 1
-    if param[1] < 250:
-        accept = 0 
-    elif param[1] > 256:
-        accept = 0 
+    #if param[1] == 288:
+    #    accept = 1 
+    #elif param[1] > 299:
+    #    accept = 1 
 
     #for selection in selections:
     #    tempAccept = 0
@@ -160,6 +181,7 @@ for module in modules:
 
 
 # draw histos
+print(f"Saving plots to {plotDir}")
 
 c = ROOT.TCanvas('c_spe_LR_ch','',800,700)
 ROOT.gPad.SetGridx()
