@@ -366,6 +366,7 @@ def take_data():
    present in the GUI. First, we move the stepper motor, then take single PE
    data, then 511 data, and finally analyze it
    """
+   take_data_button['state'] = tk.DISABLED
    
    # Clear error messages
    entry.delete(1.0,tk.END)
@@ -633,7 +634,7 @@ def take_data():
       
       module_status[i].config(text="Analysis successful!")
 
-
+   take_data_button['state'] = tk.NORMAL
 
 
 def poll_single_module(client, module):
@@ -742,7 +743,8 @@ def read_temperatures():
        root.after(3000,read_temperatures)
 
 def log_module_temps():
-    poll()
+    if take_data_button['state'] == tk.NORMAL:
+        poll()
     root.after(60000, log_module_temps)
 
 def step_home():
@@ -1056,8 +1058,8 @@ if __name__ == '__main__':
 
     entry.tag_config("error",foreground='red')
     
-    button = tk.Button(master=frame_buttons,text="Take Data", width=25, height=5, command=take_data)
-    button.pack()
+    take_data_button = tk.Button(master=frame_buttons,text="Take Data", width=25, height=5, command=take_data)
+    take_data_button.pack()
 
     stop_button = tk.Button(master=frame_buttons,text="Stop", width=25, height=5, command=stop)
     stop_button['state'] = tk.DISABLED
