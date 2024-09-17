@@ -13,3 +13,4 @@
 __pycache__
 __init__
 *.hdf5
+*.log
