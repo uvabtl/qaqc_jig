@@ -762,12 +762,14 @@ def step_home():
     client = Client(ip_address.get())
     # See above explaination of this operation
     try:
-        query(client, "step_home")
+        query(client, "step_home", 0.5)
+        step_lastposition = 0
+        os.system('echo %d > %s'%(step_lastposition, step_lastposition_path))
     except Exception as e:
         print_warning(str(e)+' due to step_home. Ignore!')
         # Read Pin 17 of teensy (stp_home)
         pin17 = 1
-        while(1):
+        while(True):
             try:
                 pin17 = query(client, "read_pin 17")
             except Exception as e:
@@ -804,18 +806,28 @@ def step_module(module_i, list_nstep):
          if module_i>step_lastposition:
             for j in range(step_lastposition +1, module_i+1):
                query(client, "step %i" % list_nstep[j], 600)
+               step_lastposition += 1
+               print(f"stepped to {step_lastposition}")
             print("step %i done" % module_i)
          elif module_i<step_lastposition:
-            for j in range(module_i +1, step_lastposition+1):
-               query(client, "step %i" % -list_nstep[j], 600)
+            for j in range(module_i+1, step_lastposition+1):
+               # check that stepper isn't at home before moving
+               time.sleep(1)
+               if query(client, "read_pin 17") == 1:
+                   print(f"pin17 is high, proceeding to {step_lastposition-1}")
+                   query(client, "step %i" % -list_nstep[j], 600)
+                   step_lastposition -= 1
+                   print(f"stepped to {step_lastposition}")
+               else:
+                   print("pin17 is 0! Stopping stepper motor")
+                   step_lastposition = 0
+                   break
             print("step %i done" % module_i)
          else:
             pass
       except Exception as e:
          print_warning(str(e)+" step")
-         return
 
-      step_lastposition = module_i
       os.system('echo %d > %s'%(step_lastposition, step_lastposition_path))
 
 def n_boards_changed(*args):
