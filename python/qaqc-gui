@@ -424,9 +424,6 @@ def take_data():
       print_warning("Not a valid data path: %s\n" % run_path)
       return
 
-   poll()
-   time.sleep(5)
-   
    # First, we try to get the stepper to the home position
    #
    # Techicalities: Command 'step_home' may take second or up to minutes for moving to home depending on its last position.
@@ -483,9 +480,6 @@ def take_data():
          print("deleting %s" % filename)
          os.unlink(filename)
 
-      poll()
-      time.sleep(5)
-      
       # Move the stepper motor to the position of the module
       if stepper_enable.get():
          step_module(i, list_nstep)
@@ -534,7 +528,7 @@ def take_data():
             print_warning(str(e))
             return
 
-         poll()
+         poll(client)
          time.sleep(5)
 
          entry.insert(tk.END, 'Taking spe events for module %d (%d/2)\n'%(i,j+1))
@@ -560,7 +554,7 @@ def take_data():
             print_warning(str(e))
             return
          
-         poll()
+         poll(client)
          time.sleep(5)
 
          entry.insert(tk.END, 'Taking lyso events for module %d (%d/2)\n'%(i,j+1))
@@ -607,8 +601,6 @@ def take_data():
       
       module_status[i].config(text="Data taking done")
 
-      poll()
-      
       # Analyze data now
       filename = filename_template(data_path=run_path, barcode=barcode, label=label.get())+'.hdf5'
       
@@ -701,14 +693,15 @@ def poll_single_module(client, module):
 
     return values
 
-def poll():
+def poll(client=None):
     """
     Read all the thermistor temperatures and the TEC resistance.
     """
     # Clear error messages
     entry.delete(1.0,tk.END)
 
-    client = Client(ip_address.get())
+    if client is None:
+        client = Client(ip_address.get())
 
     legit_temps = ""
     for i in range(12):
