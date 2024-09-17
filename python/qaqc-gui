@@ -439,7 +439,7 @@ def take_data():
       out = Popen(['cat',os.path.expanduser(step_lastposition_path)],stdout=subprocess.PIPE)
       step_lastposition = int(out.stdout.read().decode().rstrip())
       os.system('echo %d > %s'%(step_lastposition, step_lastposition_path))
-      
+
    # Next, we take the single PE data
    try:
       query(client, "set_attenuation off")
@@ -633,9 +633,6 @@ def take_data():
       
       module_status[i].config(text="Analysis successful!")
 
-   # Send the stepper back to the home position that takes a while
-   # See above explaination of this operation
-
 
 
 
@@ -785,12 +782,12 @@ def step_home():
         client.sock.settimeout(_oldtimeout)
 
 def step_module(module_i, list_nstep):
-   if abs(module_i - list_nstep) > 11:
-      print_warning("Cannot move more than 11 steps!")
-      return
-   
    out = Popen(['cat',os.path.expanduser(step_lastposition_path)],stdout=subprocess.PIPE)
    step_lastposition = int(out.stdout.read().decode().rstrip())
+
+   if abs(module_i - step_lastposition) > 11:
+      print_warning("Cannot move more than 11 steps!")
+      return
 
    ##module_i = int(module_step_entry.get())
    print("going to module %d from module %d"%(module_i,step_lastposition))
