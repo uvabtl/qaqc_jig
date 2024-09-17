@@ -201,7 +201,10 @@ def query(client, cmd, timeout=10):
     entry.yview(tk.END)
     entry.update()
     if not DEBUG:
-        return client.query(cmd, timeout)
+        print(cmd)
+        reply = client.query(cmd, timeout)
+        print(reply)
+        return reply
 
 def hv_off(client):
     n_boards = int(n_boards_var.get())
