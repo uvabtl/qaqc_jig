@@ -11,6 +11,7 @@ USE_PSU = False
 USE_CHILLER = True
 
 from btl import Client
+import socket
 import tkinter as tk
 from tkinter import ttk
 import random
@@ -202,7 +203,12 @@ def query(client, cmd, timeout=10):
     entry.update()
     if not DEBUG:
         print(cmd)
-        reply = client.query(cmd, timeout)
+        try:
+            reply = client.query(cmd, timeout)
+        except socket.timeout as e:
+            print_warning(str(e))
+            print("Encountered timeout, trying again")
+            reply = client.query(cmd, timeout)
         print(reply)
         return reply
 
@@ -793,14 +799,14 @@ def step_module(module_i, list_nstep):
 
    ##module_i = int(module_step_entry.get())
    print("going to module %d from module %d"%(module_i,step_lastposition))
-   
+
    client = Client(ip_address.get())
    #Move the stepper motor to the position of the i-th module
    if stepper_enable.get():
       try:
          if module_i>step_lastposition:
             for j in range(step_lastposition +1, module_i+1):
-               query(client, "step %i" % list_nstep[j], 600)
+               query(client, "step %i" % list_nstep[j], 60)
                step_lastposition += 1
                print(f"stepped to {step_lastposition}")
             print("step %i done" % module_i)
@@ -810,7 +816,7 @@ def step_module(module_i, list_nstep):
                time.sleep(1)
                if query(client, "read_pin 17") == 1:
                    print(f"pin17 is high, proceeding to {step_lastposition-1}")
-                   query(client, "step %i" % -list_nstep[j], 600)
+                   query(client, "step %i" % -list_nstep[j], 60)
                    step_lastposition -= 1
                    print(f"stepped to {step_lastposition}")
                else:
