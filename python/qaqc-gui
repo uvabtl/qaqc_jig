@@ -92,6 +92,11 @@ def print_warning(msg):
     stop = entry.index(tk.INSERT)
     entry.tag_add("error",start,stop)
 
+def print_normal(msg):
+    entry.insert(tk.END, "%s\n" % msg)
+    entry.yview(tk.END)
+    entry.update()
+
 def run_command(cmd, progress_bar=None):
     global stop
     stop = False
@@ -198,9 +203,10 @@ def on_closing():
     root.destroy()
 
 def query(client, cmd, timeout=10):
-    entry.insert(tk.END, "%s\n" % cmd)
-    entry.yview(tk.END)
-    entry.update()
+    if "thermistor_read" not in cmd and "tec_check" not in cmd:
+        entry.insert(tk.END, "%s\n" % cmd)
+        entry.yview(tk.END)
+        entry.update()
     if not DEBUG:
         print(cmd)
         try:
@@ -703,6 +709,7 @@ def poll(client=None):
     """
     # Clear error messages
     entry.delete(1.0,tk.END)
+    print_normal("polling all modules")
 
     if client is None:
         client = Client(ip_address.get())
