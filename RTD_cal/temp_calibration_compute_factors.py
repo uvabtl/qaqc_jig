@@ -74,6 +74,7 @@ if __name__ == '__main__':
                 "uncert": cal_temp / temp_avg * (np.std(temp_array) / temp_avg)
             }
  #           RTD_cal_info[str(slot_key)+"_"+str(jig_side)] = ("board id: "+str(board),"slot_number: "+str(slot_number),"front(0) or back(1): "+str(jig_side),"Scale factor: "+str(cal_temp/temp_avg), "uncert: "+str(cal_temp/temp_avg*(np.std(temp_array)/temp_avg)))
-    json_filename ="scale_factor_"+str(board)+"_"+str(slot_number)+"_"+str(jig_side)+".json"
+    #json_filename ="scale_factor_"+str(board)+"_"+str(slot_number)+"_"+str(jig_side)+".json"
+    json_filename ="scale_factor.json"
     with open(json_filename, 'w') as file:
         json.dump(RTD_cal_info, file, indent=4)

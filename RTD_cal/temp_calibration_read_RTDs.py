@@ -81,7 +81,8 @@ if __name__ == '__main__':
         time.sleep(poll_rate)
 
 
-    LOG_FILENAME = sys.argv[1]+'_'+sys.argv[2]+'_'+sys.argv[3]+'.log'
+    #LOG_FILENAME = sys.argv[1]+'_'+sys.argv[2]+'_'+sys.argv[3]+'.log'
+    LOG_FILENAME = 'temp.log'
     logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
     logging.info(f'board = {board_label}, board_position = {int(pos)%3}, jig_position = {pos}, jig_side = {side}, temperatures = {temp_values}')
 
