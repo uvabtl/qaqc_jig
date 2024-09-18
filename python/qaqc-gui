@@ -496,7 +496,7 @@ def take_data():
       # Move the stepper motor to the position of the module
       if stepper_enable.get():
          step_module(i, list_nstep)
-         
+
       # Loop over first 8 channels and second eight channels
       for j in range(2):
          # Diagram to help figure out what's going on. It's drawn as if you
@@ -511,29 +511,29 @@ def take_data():
          #      0   0   1     2    1   4   5
          #      0   2   3     1    1   2   3
          #      0   4   5     0    1   0   1
-         
+
          # Loop over left and right sides
          for k in range(2):
             bus = (i//3)*2 + k
             relay = (i % 3)*2 + j
-            
+
             if k == 0:
                # Ordering for the board on left side is backwards from the
                # board on the right side
                relay = 5 - relay
-                  
+
             try:
                query(client, "hv_write %i %i on" % (bus, relay))
             except Exception as e:
                print_warning(str(e))
                return
-            
+
          try:
-            query(client, "set_hv %.2f" % hv )
+            query(client, "set_hv %.2f" % hv)
          except Exception as e:
             print_warning(str(e))
             return
-            
+
          # Turn the attenuation off to take SPE data
          try:
             query(client, "set_attenuation off")
