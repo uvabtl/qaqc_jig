@@ -213,8 +213,12 @@ def query(client, cmd, timeout=10):
             reply = client.query(cmd, timeout)
         except socket.timeout as e:
             print_warning(str(e))
-            print("Encountered timeout, trying again")
-            reply = client.query(cmd, timeout)
+            if "step" in cmd:
+                print("Encountered timeout, but this is a step command, so do nothing")
+                reply = socket.timeout
+            else:
+                print("Encountered timeout, trying again")
+                reply = client.query(cmd, timeout)
         print(reply)
         return reply
 
@@ -805,36 +809,33 @@ def step_module(module_i, list_nstep):
       return
 
    ##module_i = int(module_step_entry.get())
-   print("going to module %d from module %d"%(module_i,step_lastposition))
+   print("going from module %d to module %d"%(step_lastposition, module_i))
 
    client = Client(ip_address.get())
    #Move the stepper motor to the position of the i-th module
    if stepper_enable.get():
-      try:
-         if module_i>step_lastposition:
-            for j in range(step_lastposition +1, module_i+1):
-               query(client, "step %i" % list_nstep[j], 60)
-               step_lastposition += 1
-               print(f"stepped to {step_lastposition}")
-            print("step %i done" % module_i)
-         elif module_i<step_lastposition:
-            for j in range(module_i+1, step_lastposition+1):
-               # check that stepper isn't at home before moving
-               time.sleep(1)
-               if query(client, "read_pin 17") == 1:
-                   print(f"pin17 is high, proceeding to {step_lastposition-1}")
-                   query(client, "step %i" % -list_nstep[j], 60)
-                   step_lastposition -= 1
-                   print(f"stepped to {step_lastposition}")
-               else:
-                   print("pin17 is 0! Stopping stepper motor")
-                   step_lastposition = 0
-                   break
-            print("step %i done" % module_i)
-         else:
-            pass
-      except Exception as e:
-         print_warning(str(e)+" step")
+      if module_i>step_lastposition:
+         for j in range(step_lastposition +1, module_i+1):
+            query(client, "step %i" % list_nstep[j], 60)
+            step_lastposition += 1
+            print(f"stepped to {step_lastposition}")
+         print("step %i done" % module_i)
+      elif module_i<step_lastposition:
+         for j in range(module_i+1, step_lastposition+1):
+            # check that stepper isn't at home before moving
+            time.sleep(1)
+            if query(client, "read_pin 17") == 1:
+                print(f"pin17 is high, proceeding to {step_lastposition-1}")
+                query(client, "step %i" % -list_nstep[j], 60)
+                step_lastposition -= 1
+                print(f"stepped to {step_lastposition}")
+            else:
+                print("pin17 is 0! Stopping stepper motor")
+                step_lastposition = 0
+                break
+         print("step %i done" % module_i)
+      else:
+         pass
 
       os.system('echo %d > %s'%(step_lastposition, step_lastposition_path))
 
