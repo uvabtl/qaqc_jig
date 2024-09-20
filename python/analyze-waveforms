@@ -468,7 +468,7 @@ if __name__ == '__main__':
     g_avg_lyso_pc_per_kev_vs_bar.SetName("g_avg_lyso_pc_per_kev_vs_bar")
     g_avg_lyso_pc_per_kev_vs_bar.Write()
     
-    g_avg_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy resolution")
+    g_avg_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy Resolution")
     g_avg_lyso_res_vs_bar.SetName("g_avg_lyso_res_vs_bar")
     g_avg_lyso_res_vs_bar.Write()
     
@@ -480,7 +480,7 @@ if __name__ == '__main__':
     g_avg_spe_vs_bar.SetName("g_avg_spe_vs_bar")
     g_avg_spe_vs_bar.Write()
     
-    g_avg_light_yield_vs_bar.SetTitle("Light Yield; Bar ID; Light yield (p.e./MeV)")
+    g_avg_light_yield_vs_bar.SetTitle("Light Yield; Bar ID; Light Yield (p.e./MeV)")
     g_avg_light_yield_vs_bar.SetName("g_avg_light_yield_vs_bar")
     g_avg_light_yield_vs_bar.Write()
     
@@ -583,15 +583,15 @@ if __name__ == '__main__':
                 g_R_light_yield_vs_bar.SetPoint(g_R_light_yield_vs_bar.GetN(),31-ch,LY)
                 g_R_light_yield_vs_bar.SetPointError(g_R_light_yield_vs_bar.GetN()-1,0.,LY*dtotal)
             
-    g_lyso_pc_per_kev_raw_vs_ch.SetTitle(f"LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
+    g_lyso_pc_per_kev_raw_vs_ch.SetTitle(f"Raw LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
     g_lyso_pc_per_kev_raw_vs_ch.SetName("g_lyso_pc_per_kev_raw_vs_ch")
     g_lyso_pc_per_kev_raw_vs_ch.Write()
     plot_utils.plot_graph(g_lyso_pc_per_kev_raw_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=4.)
     
-    g_lyso_pc_per_kev_vs_ch.SetTitle(f"LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
+    g_lyso_pc_per_kev_vs_ch.SetTitle(f"LYSO Fit Results; Channel; Integrated Charge (pC/keV)")
     g_lyso_pc_per_kev_vs_ch.SetName("g_lyso_pc_per_kev_vs_ch")
     g_lyso_pc_per_kev_vs_ch.Write()
-    plot_utils.plot_graph(g_lyso_pc_per_kev_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=3.)
+    plot_utils.plot_graph(g_lyso_pc_per_kev_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=4.)
         
     g_spe_vs_ch.SetTitle("SPE Fit Results; Channel; SPE Charge (pC)")
     g_spe_vs_ch.SetName("g_spe_vs_ch")
@@ -605,26 +605,26 @@ if __name__ == '__main__':
     
     
     #plots vs bar
-    g_L_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
+    g_L_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Raw Integrated Charge (pC/keV)")
     g_L_lyso_pc_per_kev_raw_vs_bar.SetName("g_lyso_L_pc_per_kev_raw_vs_bar")
     g_L_lyso_pc_per_kev_raw_vs_bar.Write()
-    g_R_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
+    g_R_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Raw Integrated Charge (pC/keV)")
     g_R_lyso_pc_per_kev_raw_vs_bar.SetName("g_lyso_R_pc_per_kev_raw_vs_bar")
     g_R_lyso_pc_per_kev_raw_vs_bar.Write()    
     plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_raw_vs_bar, g_R_lyso_pc_per_kev_raw_vs_bar, g_avg_lyso_pc_per_kev_raw_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_raw_vs_bar', yMin=0., yMax=4.)
     
-    g_L_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
+    g_L_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated Charge (pC/keV)")
     g_L_lyso_pc_per_kev_vs_bar.SetName("g_lyso_L_pc_per_kev_vs_bar")
     g_L_lyso_pc_per_kev_vs_bar.Write()
-    g_R_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated charge (pC/keV)")
+    g_R_lyso_pc_per_kev_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Integrated Charge (pC/keV)")
     g_R_lyso_pc_per_kev_vs_bar.SetName("g_lyso_R_pc_per_kev_vs_bar")
     g_R_lyso_pc_per_kev_vs_bar.Write()    
     plot_utils.plot_graph_bars(g_L_lyso_pc_per_kev_vs_bar, g_R_lyso_pc_per_kev_vs_bar, g_avg_lyso_pc_per_kev_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_pc_per_kev_vs_bar', yMin=0., yMax=4.)
     
-    g_L_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy resolution")
+    g_L_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy Resolution")
     g_L_lyso_res_vs_bar.SetName("g_lyso_L_peak_res_vs_bar")
     g_L_lyso_res_vs_bar.Write()
-    g_R_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy resolution")
+    g_R_lyso_res_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Energy Resolution")
     g_R_lyso_res_vs_bar.SetName("g_lyso_R_peak_res_vs_bar")
     g_R_lyso_res_vs_bar.Write()
     plot_utils.plot_graph_bars(g_L_lyso_res_vs_bar, g_R_lyso_res_vs_bar, g_avg_lyso_res_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_res_vs_bar', yMin=0., yMax=0.3)
@@ -660,7 +660,7 @@ if __name__ == '__main__':
             continue
         asymm = 2. * (LY_L-LY_R)/(LY_L+LY_R)
         g_light_yield_asymm_vs_bar.SetPoint(g_light_yield_asymm_vs_bar.GetN(),ibar,asymm)
-    g_light_yield_asymm_vs_bar.SetTitle(f"Light Yield asymm.;Bar ID; asymmetry")
+    g_light_yield_asymm_vs_bar.SetTitle(f"Light Yield asymm.;Bar ID; Asymmetry")
     g_light_yield_asymm_vs_bar.SetName("g_light_yield_asymm_vs_bar")
     g_light_yield_asymm_vs_bar.Write()
     plot_utils.plot_graph(g_light_yield_asymm_vs_bar, path=args.print_pdfs, filename=args.filename, xMax=16., yMin=-0.5, yMax=0.5)
