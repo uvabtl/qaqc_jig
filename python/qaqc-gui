@@ -36,6 +36,8 @@ WAVEDUMP_PROGRAM = 'wavedump'
 INTEGRATE_WAVEFORMS_PROGRAM = 'integrate-waveforms'
 ANALYZE_WAVEFORMS_PROGRAM = 'analyze-waveforms'
 
+timeout_log = []
+
 # Debug mode. Right now this just controls whether we draw random numbers for
 # polling.
 DEBUG = False
@@ -212,6 +214,8 @@ def query(client, cmd, timeout=10):
         try:
             reply = client.query(cmd, timeout)
         except socket.timeout as e:
+            global timeout_log
+            timeout_log.append(cmd)
             print_warning(str(e))
             if "step" in cmd:
                 print("Encountered timeout, but this is a step command, so do nothing")
@@ -239,9 +243,8 @@ def hv_off(client):
                 except Exception as e:
                     print_warning(str(e))
 
-STOP = False
-
 def stop():
+    take_data_button['state'] = tk.NORMAL
     global stop
     stop = True
 
@@ -383,6 +386,8 @@ def take_data():
    data, then 511 data, and finally analyze it
    """
    take_data_button['state'] = tk.DISABLED
+   global timeout_log
+   timeout_log = []
    
    # Clear error messages
    entry.delete(1.0,tk.END)
@@ -649,6 +654,12 @@ def take_data():
          continue
       
       module_status[i].config(text="Analysis successful!")
+
+   if timeout_log:
+       print("Encountered timeouts in response to the following commands:")
+       for timeout_cmd in timeout_log:
+          print(timeout_cmd)
+       print()
 
    take_data_button['state'] = tk.NORMAL
 
