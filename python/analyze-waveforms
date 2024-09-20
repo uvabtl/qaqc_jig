@@ -284,20 +284,35 @@ if __name__ == '__main__':
                 #spe_bins = plot_utils.get_bins(ch_data[channel]['spe_charge'])
                 #hspe = ROOT.TH1D("spe_ch%02d" % ch, "SPE Charge Integral for ch%02d" % ch, len(spe_bins), spe_bins[0], spe_bins[-1])
                 hspe = ROOT.TH1D("spe_ch%02d" % ch, "SPE Charge Integral for ch%02d" % ch, 1000, -5., 20.)
+                hspe_raw = ROOT.TH1D("spe_ch%02d_raw" % ch, "SPE Raw Charge Integral for ch%02d" % ch, 1000, -5., 20.)
+                event_charges_raw = ch_data[channel][f'spe_charge']
                 if gMasterCalib_spe is not None:
-                    event_charges = ch_data[channel]['spe_charge'] * gMasterCalib_spe.Eval(ch)
+                    event_charges = event_charges_raw * gMasterCalib_spe.Eval(ch)
                 else:
                     print("No SPE calibration found; just using raw charges")
-                    event_charges = ch_data[channel]['spe_charge']
+                    event_charges = event_charges_raw
+                for x in event_charges_raw:
+                    hspe_raw.Fill(x)
                 for x in event_charges:
                     hspe.Fill(x)
+                hspe_raw.SetTitle(";Charge Raw (pC);entries")
                 hspe.SetTitle(";Charge (pC);entries")
                 
                 print('Fitting SPE %s!' % channel)
+                spe_fit_pars_raw = None
                 spe_fit_pars = None
                 #model = fit_spe_funcs.vinogradov_model()
                 #spe_fit_pars = fit_spe_funcs.fit_spe(hspe, model)
+                spe_fit_pars_raw = fit_spe_funcs.fit_spe_tspectrum(hspe_raw)
                 spe_fit_pars = fit_spe_funcs.fit_spe_tspectrum(hspe)
+                if spe_fit_pars_raw is not None:
+                    ch_data[channel]['spe_fit_pars_raw'] = spe_fit_pars_raw[0]
+                    ch_data[channel]['spe_fit_par_errors_raw'] = spe_fit_pars_raw[1]
+                    ch_data[channel]['spe_raw'] = spe_fit_pars_raw[0][0]
+                else:
+                    ch_data[channel]['spe_fit_pars_raw'] = None
+                    ch_data[channel]['spe_fit_par_errors_raw'] = None
+                    ch_data[channel]['spe_raw'] = None
                 if spe_fit_pars is not None:
                     ch_data[channel]['spe_fit_pars'] = spe_fit_pars[0]
                     ch_data[channel]['spe_fit_par_errors'] = spe_fit_pars[1]
@@ -413,6 +428,7 @@ if __name__ == '__main__':
     g_avg_lyso_res_vs_bar = ROOT.TGraphErrors()
     g_avg_lyso_counts_vs_bar = ROOT.TGraphErrors()
     g_avg_light_yield_vs_bar = ROOT.TGraphErrors()
+    g_avg_spe_raw_vs_bar = ROOT.TGraphErrors()
     g_avg_spe_vs_bar = ROOT.TGraphErrors()
     
     for channel in sorted([item for item in ch_data if 'bar' in item], key=lambda channel: int(channel[3:])):
@@ -427,6 +443,10 @@ if __name__ == '__main__':
         source_fit_par_errors_raw = ch_data[channel][f'lyso_fit_par_errors_raw']        
         source_fit_pars = ch_data[channel][f'lyso_fit_pars']
         source_fit_par_errors = ch_data[channel][f'lyso_fit_par_errors']
+        spe_fit_pars1_raw = ch_data['ch%d'%ch1]['spe_fit_pars_raw']
+        spe_fit_pars2_raw = ch_data['ch%d'%ch2]['spe_fit_pars_raw']
+        spe_fit_par_errors1_raw = ch_data['ch%d'%ch1]['spe_fit_par_errors_raw']
+        spe_fit_par_errors2_raw = ch_data['ch%d'%ch2]['spe_fit_par_errors_raw']
         spe_fit_pars1 = ch_data['ch%d'%ch1]['spe_fit_pars']
         spe_fit_pars2 = ch_data['ch%d'%ch2]['spe_fit_pars']
         spe_fit_par_errors1 = ch_data['ch%d'%ch1]['spe_fit_par_errors']
@@ -446,6 +466,10 @@ if __name__ == '__main__':
             g_avg_lyso_counts_vs_bar.SetPoint(g_avg_lyso_counts_vs_bar.GetN(),ch1,source_fit_pars[2])
             g_avg_lyso_counts_vs_bar.SetPointError(g_avg_lyso_counts_vs_bar.GetN()-1,0.,source_fit_par_errors[2])
         
+        if spe_fit_pars1_raw is not None and spe_fit_pars2_raw is not None:
+            g_avg_spe_raw_vs_bar.SetPoint(g_avg_spe_raw_vs_bar.GetN(),ch1,0.5*(spe_fit_pars1_raw[0]+spe_fit_pars2_raw[0]))
+            g_avg_spe_raw_vs_bar.SetPointError(g_avg_spe_raw_vs_bar.GetN()-1,0.,0.5*math.sqrt(spe_fit_par_errors1_raw[0]**2+spe_fit_par_errors2_raw[0]**2))
+
         if spe_fit_pars1 is not None and spe_fit_pars2 is not None:
             g_avg_spe_vs_bar.SetPoint(g_avg_spe_vs_bar.GetN(),ch1,0.5*(spe_fit_pars1[0]+spe_fit_pars2[0]))
             g_avg_spe_vs_bar.SetPointError(g_avg_spe_vs_bar.GetN()-1,0.,0.5*math.sqrt(spe_fit_par_errors1[0]**2+spe_fit_par_errors2[0]**2))
@@ -475,6 +499,10 @@ if __name__ == '__main__':
     g_avg_lyso_counts_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Counts at photopeak")
     g_avg_lyso_counts_vs_bar.SetName("g_avg_lyso_counts_vs_bar")
     g_avg_lyso_counts_vs_bar.Write()
+
+    g_avg_spe_raw_vs_bar.SetTitle("SPE Fit Results; Bar ID; Raw SPE Charge (pC)")
+    g_avg_spe_raw_vs_bar.SetName("g_avg_spe_raw_vs_bar")
+    g_avg_spe_raw_vs_bar.Write()
 
     g_avg_spe_vs_bar.SetTitle("SPE Fit Results; Bar ID; SPE Charge (pC)")
     g_avg_spe_vs_bar.SetName("g_avg_spe_vs_bar")
