@@ -73,6 +73,10 @@ for inputFile in inputFiles:
             module = token[7:21]
         if 'run' in token:
             run = int(token[3:])
+    
+    if run not in good_runs:
+        continue
+
     jsonFileName = data_path+'run%04d/qaqc_gui.settings'%run
     config = json.load(open(jsonFileName))
     slot = 0
