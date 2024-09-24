@@ -16,19 +16,14 @@ import tdrstyle
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_45_SMs_calib/'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_47_SMs_calib/'
 
 good_runs = [
-    248,
-    249,
-    250,
-    254,
-    270,
-    288,
-    301,
-    302,
-    303,
-    307,
+    356,
+    358,
+    359,
+    360,
+    361,
 ]
 
 modules_to_skip = [

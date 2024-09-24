@@ -17,13 +17,11 @@ from typing import NamedTuple
 BAC = "UVA"
 
 good_runs = [
-    248,
-    249,
-    250,
-    251,
-    252,
-    253,
-    254,
+    356,
+    358,
+    359,
+    360,
+    361,
 ]
 
 if BAC == "Milano":
@@ -34,7 +32,7 @@ if BAC == "Milano":
 elif BAC == "UVA":
     data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
     selections = ['GOOD']
-    plotDir = '/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/'
+    plotDir = '/var/www/html/data/production/calibrationPlots_run0356-run0361_calib/'
 
 
 if not os.path.isdir(plotDir):
@@ -90,7 +88,10 @@ for inputFile in inputFiles:
     print(module,run,params[(module,run)],config)
 
 bad_modules = []
-#bad_modules.append('32110020000004')
+bad_modules.append('32110020005630')
+bad_modules.append('32110020005632')
+bad_modules.append('32110020005634')
+bad_modules.append('32110020000041')
 #bad_modules.append('32110020000005')
 #bad_modules.append('32110020000009')
 #bad_modules.append('32110020000018')
