@@ -427,6 +427,7 @@ if __name__ == '__main__':
     g_avg_lyso_pc_per_kev_vs_bar = ROOT.TGraphErrors()
     g_avg_lyso_res_vs_bar = ROOT.TGraphErrors()
     g_avg_lyso_counts_vs_bar = ROOT.TGraphErrors()
+    g_avg_light_yield_raw_vs_bar = ROOT.TGraphErrors()
     g_avg_light_yield_vs_bar = ROOT.TGraphErrors()
     g_avg_spe_raw_vs_bar = ROOT.TGraphErrors()
     g_avg_spe_vs_bar = ROOT.TGraphErrors()
@@ -475,6 +476,14 @@ if __name__ == '__main__':
             g_avg_spe_vs_bar.SetPointError(g_avg_spe_vs_bar.GetN()-1,0.,0.5*math.sqrt(spe_fit_par_errors1[0]**2+spe_fit_par_errors2[0]**2))
 
         print(ch1,source_fit_pars,spe_fit_pars1,spe_fit_pars2)
+        if source_fit_pars_raw is not None and spe_fit_pars1_raw is not None and spe_fit_pars2_raw is not None:
+            LY_raw = source_fit_pars_raw[0]*ATTENUATION_FACTOR*1000/(0.5*(spe_fit_pars1_raw[0]+spe_fit_pars2_raw[0]))
+            dsource_raw = source_fit_par_errors_raw[0]/source_fit_pars_raw[0]
+            dspe_raw = 0.5 * np.sqrt(spe_fit_par_errors1_raw[0]**2+spe_fit_par_errors2_raw[0]**2)/(0.5*(spe_fit_pars1_raw[0]+spe_fit_pars2_raw[0]))
+            dtotal_raw = np.sqrt(dsource_raw**2 + dspe_raw**2)
+            g_avg_light_yield_raw_vs_bar.SetPoint(g_avg_light_yield_raw_vs_bar.GetN(),ch1,LY_raw)
+            g_avg_light_yield_raw_vs_bar.SetPointError(g_avg_light_yield_raw_vs_bar.GetN()-1,0.,LY_raw*dtotal_raw)
+
         if source_fit_pars is not None and spe_fit_pars1 is not None and spe_fit_pars2 is not None:
             LY = source_fit_pars[0]*ATTENUATION_FACTOR*1000/(0.5*(spe_fit_pars1[0]+spe_fit_pars2[0]))
             dsource = source_fit_par_errors[0]/source_fit_pars[0]
@@ -508,6 +517,10 @@ if __name__ == '__main__':
     g_avg_spe_vs_bar.SetName("g_avg_spe_vs_bar")
     g_avg_spe_vs_bar.Write()
     
+    g_avg_light_yield_raw_vs_bar.SetTitle("Light Yield; Bar ID; Light Yield (p.e./MeV)")
+    g_avg_light_yield_raw_vs_bar.SetName("g_avg_light_yield_raw_vs_bar")
+    g_avg_light_yield_raw_vs_bar.Write()
+
     g_avg_light_yield_vs_bar.SetTitle("Light Yield; Bar ID; Light Yield (p.e./MeV)")
     g_avg_light_yield_vs_bar.SetName("g_avg_light_yield_vs_bar")
     g_avg_light_yield_vs_bar.Write()
@@ -518,23 +531,30 @@ if __name__ == '__main__':
     g_lyso_pc_per_kev_vs_ch = ROOT.TGraphErrors()
     g_lyso_res_vs_ch = ROOT.TGraphErrors()
     g_lyso_counts_vs_ch = ROOT.TGraphErrors()
+    g_spe_raw_vs_ch = ROOT.TGraphErrors()
     g_spe_vs_ch = ROOT.TGraphErrors()
+    g_light_yield_raw_vs_ch = ROOT.TGraphErrors()
     g_light_yield_vs_ch = ROOT.TGraphErrors()
     
     g_L_lyso_pc_per_kev_raw_vs_bar = ROOT.TGraphErrors()
     g_L_lyso_pc_per_kev_vs_bar = ROOT.TGraphErrors()
     g_L_lyso_res_vs_bar = ROOT.TGraphErrors()
     g_L_lyso_counts_vs_bar = ROOT.TGraphErrors()
+    g_L_spe_raw_vs_bar = ROOT.TGraphErrors()
     g_L_spe_vs_bar = ROOT.TGraphErrors()
+    g_L_light_yield_raw_vs_bar = ROOT.TGraphErrors()
     g_L_light_yield_vs_bar = ROOT.TGraphErrors()
     
     g_R_lyso_pc_per_kev_raw_vs_bar = ROOT.TGraphErrors()
     g_R_lyso_pc_per_kev_vs_bar = ROOT.TGraphErrors()
     g_R_lyso_res_vs_bar = ROOT.TGraphErrors()
     g_R_lyso_counts_vs_bar = ROOT.TGraphErrors()
+    g_R_spe_raw_vs_bar = ROOT.TGraphErrors()
     g_R_spe_vs_bar = ROOT.TGraphErrors()
+    g_R_light_yield_raw_vs_bar = ROOT.TGraphErrors()
     g_R_light_yield_vs_bar = ROOT.TGraphErrors()
     
+    g_light_yield_asymm_raw_vs_bar = ROOT.TGraphErrors()
     g_light_yield_asymm_vs_bar = ROOT.TGraphErrors()
     
     for channel in sorted([item for item in ch_data if 'bar' not in item], key=lambda channel: int(channel[2:])):
@@ -545,6 +565,8 @@ if __name__ == '__main__':
         source_fit_par_errors_raw = ch_data[channel][f'lyso_fit_par_errors_raw']
         source_fit_pars = ch_data[channel][f'lyso_fit_pars']
         source_fit_par_errors = ch_data[channel][f'lyso_fit_par_errors']        
+        spe_fit_pars_raw = ch_data[channel]['spe_fit_pars_raw']
+        spe_fit_par_errors_raw = ch_data[channel]['spe_fit_par_errors_raw']
         spe_fit_pars = ch_data[channel]['spe_fit_pars']
         spe_fit_par_errors = ch_data[channel]['spe_fit_par_errors']
         
@@ -587,6 +609,16 @@ if __name__ == '__main__':
                 g_R_lyso_counts_vs_bar.SetPoint(g_R_lyso_counts_vs_bar.GetN(),31-ch,source_fit_pars[2])
                 g_R_lyso_counts_vs_bar.SetPointError(g_R_lyso_counts_vs_bar.GetN()-1,0.,source_fit_par_errors[2])
             
+        if spe_fit_pars_raw is not None:
+            g_spe_raw_vs_ch.SetPoint(g_spe_raw_vs_ch.GetN(),ch,spe_fit_pars_raw[0])
+            g_spe_raw_vs_ch.SetPointError(g_spe_raw_vs_ch.GetN()-1,0.,spe_fit_par_errors_raw[0])
+            if ch < 16:
+                g_L_spe_raw_vs_bar.SetPoint(g_L_spe_raw_vs_bar.GetN(),ch,spe_fit_pars_raw[0])
+                g_L_spe_raw_vs_bar.SetPointError(g_L_spe_raw_vs_bar.GetN()-1,0.,spe_fit_par_errors_raw[0])
+            else:
+                g_R_spe_raw_vs_bar.SetPoint(g_R_spe_raw_vs_bar.GetN(),31-ch,spe_fit_pars_raw[0])
+                g_R_spe_raw_vs_bar.SetPointError(g_R_spe_raw_vs_bar.GetN()-1,0.,spe_fit_par_errors_raw[0])
+        
         if spe_fit_pars is not None:
             g_spe_vs_ch.SetPoint(g_spe_vs_ch.GetN(),ch,spe_fit_pars[0])
             g_spe_vs_ch.SetPointError(g_spe_vs_ch.GetN()-1,0.,spe_fit_par_errors[0])
@@ -597,6 +629,20 @@ if __name__ == '__main__':
                 g_R_spe_vs_bar.SetPoint(g_R_spe_vs_bar.GetN(),31-ch,spe_fit_pars[0])
                 g_R_spe_vs_bar.SetPointError(g_R_spe_vs_bar.GetN()-1,0.,spe_fit_par_errors[0])
         
+        if source_fit_pars_raw is not None and spe_fit_pars_raw is not None:
+            LY_raw = source_fit_pars_raw[0]*ATTENUATION_FACTOR*1000/spe_fit_pars_raw[0]
+            dsource_raw = source_fit_par_errors_raw[0]/source_fit_pars_raw[0]
+            dspe_raw = spe_fit_par_errors_raw[0]/spe_fit_pars_raw[0]
+            dtotal_raw = np.sqrt(dsource_raw**2 + dspe_raw**2)
+            g_light_yield_raw_vs_ch.SetPoint(g_light_yield_raw_vs_ch.GetN(),ch,LY_raw)
+            g_light_yield_raw_vs_ch.SetPointError(g_light_yield_raw_vs_ch.GetN()-1,0.,LY_raw*dtotal_raw)
+            if ch < 16:
+                g_L_light_yield_raw_vs_bar.SetPoint(g_L_light_yield_raw_vs_bar.GetN(),ch,LY_raw)
+                g_L_light_yield_raw_vs_bar.SetPointError(g_L_light_yield_raw_vs_bar.GetN()-1,0.,LY_raw*dtotal_raw)
+            else:
+                g_R_light_yield_raw_vs_bar.SetPoint(g_R_light_yield_raw_vs_bar.GetN(),31-ch,LY_raw)
+                g_R_light_yield_raw_vs_bar.SetPointError(g_R_light_yield_raw_vs_bar.GetN()-1,0.,LY_raw*dtotal_raw)
+
         if source_fit_pars is not None and spe_fit_pars is not None:
             LY = source_fit_pars[0]*ATTENUATION_FACTOR*1000/spe_fit_pars[0]
             dsource = source_fit_par_errors[0]/source_fit_pars[0]
@@ -610,7 +656,7 @@ if __name__ == '__main__':
             else:
                 g_R_light_yield_vs_bar.SetPoint(g_R_light_yield_vs_bar.GetN(),31-ch,LY)
                 g_R_light_yield_vs_bar.SetPointError(g_R_light_yield_vs_bar.GetN()-1,0.,LY*dtotal)
-            
+
     g_lyso_pc_per_kev_raw_vs_ch.SetTitle(f"Raw LYSO Fit Results; Channel; Raw Integrated Charge (pC/keV)")
     g_lyso_pc_per_kev_raw_vs_ch.SetName("g_lyso_pc_per_kev_raw_vs_ch")
     g_lyso_pc_per_kev_raw_vs_ch.Write()
@@ -620,18 +666,28 @@ if __name__ == '__main__':
     g_lyso_pc_per_kev_vs_ch.SetName("g_lyso_pc_per_kev_vs_ch")
     g_lyso_pc_per_kev_vs_ch.Write()
     plot_utils.plot_graph(g_lyso_pc_per_kev_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=4.)
-        
+
+    g_spe_raw_vs_ch.SetTitle("Raw SPE Fit Results; Channel; Raw SPE Charge (pC)")
+    g_spe_raw_vs_ch.SetName("g_spe_raw_vs_ch")
+    g_spe_raw_vs_ch.Write()
+    plot_utils.plot_graph(g_spe_raw_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=8.)
+
     g_spe_vs_ch.SetTitle("SPE Fit Results; Channel; SPE Charge (pC)")
     g_spe_vs_ch.SetName("g_spe_vs_ch")
     g_spe_vs_ch.Write()
     plot_utils.plot_graph(g_spe_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=8.)
-    
+
+    g_light_yield_raw_vs_ch.SetTitle("Raw Light Yield; Channel; Raw Light Yield (p.e./MeV)")
+    g_light_yield_raw_vs_ch.SetName("g_light_yield_raw_vs_ch")
+    g_light_yield_raw_vs_ch.Write()
+    plot_utils.plot_graph(g_light_yield_raw_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=6000.)
+
     g_light_yield_vs_ch.SetTitle("Light Yield; Channel; Light Yield (p.e./MeV)")
     g_light_yield_vs_ch.SetName("g_light_yield_vs_ch")
     g_light_yield_vs_ch.Write()
     plot_utils.plot_graph(g_light_yield_vs_ch, path=args.print_pdfs, filename=args.filename, yMin=0., yMax=6000.)
-    
-    
+
+
     #plots vs bar
     g_L_lyso_pc_per_kev_raw_vs_bar.SetTitle(f"LYSO Fit Results; Bar ID; Raw Integrated Charge (pC/keV)")
     g_L_lyso_pc_per_kev_raw_vs_bar.SetName("g_lyso_L_pc_per_kev_raw_vs_bar")
@@ -664,7 +720,15 @@ if __name__ == '__main__':
     g_R_lyso_counts_vs_bar.SetName("g_lyso_R_peak_counts_vs_bar")
     g_R_lyso_counts_vs_bar.Write()
     plot_utils.plot_graph_bars(g_L_lyso_counts_vs_bar, g_R_lyso_counts_vs_bar, g_avg_lyso_counts_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_lyso_counts_vs_bar', yMin=0., yMax=1000.)
-    
+
+    g_L_spe_raw_vs_bar.SetTitle(f"Raw SPE Fit Results; Bar ID; Raw SPE Charge (pC)")
+    g_L_spe_raw_vs_bar.SetName("g_spe_L_raw_vs_bar")
+    g_L_spe_raw_vs_bar.Write()
+    g_R_spe_raw_vs_bar.SetTitle(f"Raw SPE Fit Results; Bar ID; Raw SPE Charge (pC)")
+    g_R_spe_raw_vs_bar.SetName("g_spe_R_raw_vs_bar")
+    g_R_spe_raw_vs_bar.Write()    
+    plot_utils.plot_graph_bars(g_L_spe_raw_vs_bar, g_R_spe_raw_vs_bar, g_avg_spe_raw_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_spe_raw_vs_bar', yMin=0., yMax=8.)
+
     g_L_spe_vs_bar.SetTitle(f"SPE Fit Results; Bar ID; SPE Charge (pC)")
     g_L_spe_vs_bar.SetName("g_spe_L_vs_bar")
     g_L_spe_vs_bar.Write()
@@ -672,7 +736,15 @@ if __name__ == '__main__':
     g_R_spe_vs_bar.SetName("g_spe_R_vs_bar")
     g_R_spe_vs_bar.Write()    
     plot_utils.plot_graph_bars(g_L_spe_vs_bar, g_R_spe_vs_bar, g_avg_spe_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_spe_vs_bar', yMin=0., yMax=8.)
-    
+
+    g_L_light_yield_raw_vs_bar.SetTitle(f"Raw Light Yield; Bar ID; Raw Light Yield (p.e./MeV)")
+    g_L_light_yield_raw_vs_bar.SetName("g_L_light_yield_raw_vs_bar")
+    g_L_light_yield_raw_vs_bar.Write()
+    g_R_light_yield_raw_vs_bar.SetTitle(f"Raw Light Yield; Bar ID; Raw Light Yield (p.e./MeV)")
+    g_R_light_yield_raw_vs_bar.SetName("g_R_light_yield_raw_vs_bar")
+    g_R_light_yield_raw_vs_bar.Write()
+    plot_utils.plot_graph_bars(g_L_light_yield_raw_vs_bar, g_R_light_yield_raw_vs_bar, g_avg_light_yield_raw_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_light_yield_raw_vs_bar', yMin=0., yMax=6000.)
+
     g_L_light_yield_vs_bar.SetTitle(f"Light Yield; Bar ID; Light Yield (p.e./MeV)")
     g_L_light_yield_vs_bar.SetName("g_L_light_yield_vs_bar")
     g_L_light_yield_vs_bar.Write()
@@ -681,6 +753,18 @@ if __name__ == '__main__':
     g_R_light_yield_vs_bar.Write()
     plot_utils.plot_graph_bars(g_L_light_yield_vs_bar, g_R_light_yield_vs_bar, g_avg_light_yield_vs_bar, path=args.print_pdfs, filename=args.filename, graphname='g_light_yield_vs_bar', yMin=0., yMax=6000.)
     
+    for ibar in range(16):
+        LY_L_raw = plot_utils.GetBarValue(g_L_light_yield_raw_vs_bar,ibar)
+        LY_R_raw = plot_utils.GetBarValue(g_R_light_yield_raw_vs_bar,ibar)
+        if LY_L_raw < 0. or LY_R_raw < 0.:
+            continue
+        asymm_raw = 2. * (LY_L_raw-LY_R_raw)/(LY_L_raw+LY_R_raw)
+        g_light_yield_asymm_raw_vs_bar.SetPoint(g_light_yield_asymm_raw_vs_bar.GetN(),ibar,asymm_raw)
+    g_light_yield_asymm_raw_vs_bar.SetTitle(f"Raw Light Yield asymm.;Bar ID; Raw Asymmetry")
+    g_light_yield_asymm_raw_vs_bar.SetName("g_light_yield_asymm_raw_vs_bar")
+    g_light_yield_asymm_raw_vs_bar.Write()
+    plot_utils.plot_graph(g_light_yield_asymm_raw_vs_bar, path=args.print_pdfs, filename=args.filename, xMax=16., yMin=-0.5, yMax=0.5)
+
     for ibar in range(16):
         LY_L = plot_utils.GetBarValue(g_L_light_yield_vs_bar,ibar)
         LY_R = plot_utils.GetBarValue(g_R_light_yield_vs_bar,ibar)
