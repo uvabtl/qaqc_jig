@@ -154,6 +154,7 @@ h_LOmaxvar_ch = ROOT.TH1F('h_LOmaxvar_ch','',50,0.,100.)
 h_lyso_L_pc_per_kev_vs_bar= ROOT.TH1F('h_lyso_L_pc_per_kev_vs_bar','',100,0,5)
 h_lyso_R_pc_per_kev_vs_bar= ROOT.TH1F('h_lyso_R_pc_per_kev_vs_bar','',100,0,5)
 
+module_data = {}
 # selecting the modules to be included in the summary: accept 1 if included, 0 otherwise
 for module in modules:
     param = params[module]
@@ -240,6 +241,8 @@ for module in modules:
 
     graph = rootfile.Get('g_avg_light_yield_vs_bar')
     h_LO_avg_bar.Fill(GetMeanRMS(graph)[0])
+    #print(f"Mean Value for {module} is {GetMeanRMS(graph)[0]}")
+    module_data.update({module: GetMeanRMS(graph)[0]})
     h_LOrms_bar.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_bar.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
     for point in range(graph.GetN()):
@@ -266,7 +269,7 @@ for module in modules:
 
 
 
-
+print(module_data)
 # draw histos
 print(f"Saving plots to {plotDir}")
 
