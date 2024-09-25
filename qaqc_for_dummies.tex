@@ -1,0 +1,1130 @@
+\documentclass[12pt,openright,twoside]{report}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{fullpage}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=none,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+\usepackage{xcolor}
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage{amsmath}
+\usepackage{afterpage}
+\usepackage[sorting=none]{biblatex} %Imports biblatex package
+\addbibresource{ref.bib} %Import the bibliography file
+\usepackage{siunitx}
+\mdfsetup{nobreak=true}
+\definecolor{light-gray}{gray}{0.95} %the shade of grey that stack exchange uses
+\title{QA/QC Jig Documentation \\ \large Version 0.1}
+\author{Adi Bornheim \and John Dervan \and Anthony LaTorre \and Lautaro Narvaez \and Guillermo Reales \and Kai Svenson}
+\date{\today}
+\begin{document}
+\begin{titlepage}
+    \definecolor{bg}{HTML}{FFF001}
+    \pagecolor{bg}\afterpage{\nopagecolor}
+    \includepdf[offset=0.375in 0,scale=.9,clip,trim=1mm 1mm 1mm 1mm,pagecommand={}]{qaqc_for_dummies_title_page.pdf}
+\end{titlepage}
+\begin{titlepage}
+    \maketitle
+\end{titlepage}
+\tableofcontents
+\chapter{Introduction}
+The BTL QA/QC jig is designed to test up to 12 LYSO arrays at a time for
+quality assurance during gluing procedure at each of the assembly centers. The
+arrays are attached to the jig via the flex cables which attach to the
+panasonic connectors. The theory of operation is that when the SiPM is hit by
+photons it generates a current pulse which travels along the boards to the
+amplifier boards at the front where a transimpedance amplifier converts this
+current pulse into a voltage signal. That voltage signal is then amplified by a
+factor of approximately 4 by a second stage op amp before leaving the boards
+through an SMA connector. Before the final output there are two gain paths:
+attenuated and through. The attenuated path goes through a 4x gain reduction
+path constructed from a pi attenuator circuit of completely passive resistors
+while the through path goes through unattenuated. The purpose of these two gain
+paths is to allow us to measure both single photons (through path) and $\sim$ 1
+MeV signals (attenuated path) with the CAEN DT5742 digitizer which has a fixed
+dynamic range of 1 V peak to peak.
+\chapter{Setup}
+\label{chapter:setup}
+The first thing each assembly center will need to procure is a computer capable
+of running the software to talk to the jig and for storing and analyzing data.
+The minimum specs required for each machine are the following:
+\begin{enumerate}
+\item Linux compatible (to run Alma Linux 8)\footnote{This means generally not using any hardware which was released too recently as it may not have drivers}
+\item 2 TB NVME disk (important!)
+\item 64-bit
+\item 8 GB RAM
+\end{enumerate}
+The next step is to install Alma Linux 8. You can do so by downloading the iso
+file at one of the mirrors listed at
+\url{https://mirrors.almalinux.org/isos/x86_64/8.7.html} and copying it to a
+USB. For example if your USB is at /dev/sdb you can run:
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray,roundcorner=20pt]
+\begin{lstlisting}
+$ curl -O -L http://dist-mirror.fibernetics.ca/almalinux/8.7/isos/x86_64/AlmaLinux-8-latest-x86_64-dvd.iso
+$ dd AlmaLinux-8-latest-x86_64-dvd.iso /dev/sdb
+\end{lstlisting}
+\end{mdframed}
+
+The 2 TB NVME drive is extremely important as the speed at which data can be
+taken may otherwise be limited by the hard drive speed.
+
+After installing Alma Linux 8, we need to update some packages and add the
+current user to the wheel group so they can run sudo commands. To do this run
+the following commands:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray,roundcorner=20pt]
+\begin{lstlisting}
+$ su # switch to root
+# dnf update -y
+# dnf group install "Development Tools"
+# dnf config-manager --set-enabled powertools
+# dnf install epel-release
+# usermod -aG wheel [username]
+\end{lstlisting}
+\end{mdframed}
+
+Then you need to restart the computer for the changes to take effect.
+
+Next, you can follow the instructions in the README at
+\url{https://github.com/alatorre-caltech/dt5742} for installing the data
+acquisition software or run the following commands:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray,roundcorner=20pt]
+\begin{lstlisting}
+$ cd # go back to home directory
+$ git clone https://github.com/alatorre-caltech/dt5742
+$ cd dt5742
+$ sudo dnf install hdf5 hdf5-devel python3-numpy python3-scipy python3-psycopg2 root python3-root python3-h5py python3-matplotlib
+$ sudo make install-deps
+$ make
+$ sudo make install
+\end{lstlisting}
+\end{mdframed}
+
+\section{Talking to the Teensy}
+This section will discuss getting the jig set up so you can communicate with the Teensy microcontroller.
+\subsection{Flashing the Firmware}
+First you need to flash the firmware on to the Teensy (this may have already
+been done for you, if so you can skip this part). To do this you first need to install the Arduino and Teensy software.
+
+To install the Arduino software, download
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ cd
+$ curl -O -L https://downloads.arduino.cc/arduino-1.8.9-linux64.tar.xz
+$ tar -xvf arduino-1.8.9-linux64.tar.xz
+\end{lstlisting}
+\end{mdframed}
+
+You can then follow the instructions for installing Teensyduino at \url{https://www.pjrc.com/teensy/td_download.html} or by running the following commands:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ cd
+$ wget https://www.pjrc.com/teensy/td_154/TeensyduinoInstall.linux64
+$ wget https://www.pjrc.com/teensy/00-teensy.rules
+$ sudo cp 00-teensy.rules /etc/udev/rules.d/
+$ chmod 755 TeensyduinoInstall.linux64
+$ ./TeensyduinoInstall.linux64 --dir=arduino-1.8.9
+$ cd arduino-1.8.9/hardware/teensy/avr/cores/teensy4
+$ make
+\end{lstlisting}
+\end{mdframed}
+
+Next, hook up the USB cable from the computer to the Teensy and run the arduino software:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ cd arduino-1.8.9
+$ ./arduino
+\end{lstlisting}
+\end{mdframed}
+
+You should now be able to upload the sketch. You can verify that everything is
+working by opening the ``Serial Monitor'' (see Figure~\ref{fig:serial-monitor})
+and you should see some text from the Teensy (there will be some things that
+look like errors, but that's just because by default the Teensy expects to see
+8 boards, but you most likely have less than that, see
+Figure~\ref{fig:serial-monitor-output} for an example).
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{arduino.png}
+\caption{Button to open the serial monitor is on the upper right corner of the Arduino GUI.}
+\label{fig:serial-monitor}
+\end{figure}
+
+You can immediately communicate with the board by typing in the serial monitor.
+For example, try ``help'' which will output a list of commands you can send to
+the board.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{serial_monitor.png}
+\caption{Serial monitor output on bootup}
+\label{fig:serial-monitor-output}
+\end{figure}
+
+\subsection{Talking over Ethernet}
+
+All of the tools like the GUI use UDP packets to communicate with the Teensy.
+To get that working you first need to hook up the computer and the Teensy to a
+local router and set up the router to give the Teensy a static IP address based
+on its MAC address (if you're at a national lab, abandon all hope! You'll
+probably have to spend weeks or months to petition them to set up the router
+like so, so instead I'd recommend buying a cheap router at Best Buy or online
+and having a totally separate LAN).
+
+To do this you should visit the local routers admin page (usually something
+like 192.168.0.1) and then going to ``DHCP'' and then
+setting it up so that any computer which connects with the MAC address
+AA:AA:AA:AA:AA:AA will automatically be given the IP address 192.168.1.177 (or
+something else, but that's the default in all the software). See
+Figure~\ref{fig:dhcp} for an example. Note that if you are using a different
+router it may look slightly different.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{dhcp2.png}
+\caption{Webpage to set the DHCP IP address for the Teensy.}
+\label{fig:dhcp}
+\end{figure}
+
+Once you have done this and rebooted the Teensy (make sure you don't see the first error message ``Ethernet cable is not connected.'' in the Serial monitor), you can try to communicate with it by running:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ qaqc-client --ip-address 192.168.1.177
+>>> help
+\end{lstlisting}
+\end{mdframed}
+
+If you get a timeout then you probably didn't set up the static IP address
+correctly. If you correctly see the same help message as before when you were
+talking over USB then everything is configured correctly!
+
+See Section~\ref{sec:qaqc-client} for a full list of commands.
+
+\section{Getting Started}
+To run the normal QA/QC GUI you first need to export some environment variables
+so that the software can upload results to the database. To do so, you can run
+the following commands:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ echo "export BTL_DB_HOST=btl-testing.hep.caltech.edu" >> ~/.bashrc
+$ echo "export BTL_DB_PASS=[password]" >> ~/.bashrc
+\end{lstlisting}
+\end{mdframed}
+
+where you should replace [password] with the actual password. After running
+this command you should close and restart your terminal for the changes to take
+effect.
+
+Next, to run the qaqc-gui:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ qaqc-gui --ip-address 192.168.1.177
+\end{lstlisting}
+\end{mdframed}
+
+You should see a window like that in Figure~\ref{fig:qaqc-gui}.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{qaqc_gui.png}
+\caption{QA/QC GUI}
+\label{fig:qaqc-gui}
+\end{figure}
+
+First, you should make sure that the modules which you have connected are
+written in the GUI. The modules on the top of the GUI should be the ones
+closest to the control board. You can also check the ``Present'' checkbox to
+indicate which modules you wish to analyze. Finally, you can press the button
+labelled ``Take Data'' to actually take data.
+
+\section{Addresses for the Boards}
+The control board talks with each board individually by addressing it on the
+I2C bus. In order for this to happen properly (i.e. to open the correct relay),
+it is necessary that the addresses be set properly. See
+Figure~\ref{fig:solidworks-front-annotated} to see how they should be set up.
+The board closest to the front panel on the left side should be address 0, the
+board opposite that should be address 1, the second board from the front panel
+on the left side should be address 2, etc. \emph{Note that the address should
+be read in binary as if reading it from left to right. This may be confusing
+since the first dip switch is labelled 1 even though it is the 3rd binary
+digit.}
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{solidworks_front_annotated.png}
+\caption{Solidworks rendering of the front of the QA/QC jig showing the correct addresses that need to be set on each board.}
+\label{fig:solidworks-front-annotated}
+\end{figure}
+
+\section{Hooking Channels up to the CAEN Digitizer}
+Figure~\ref{fig:solidworks-front-annotated-caen} shows which channels on the
+front panel need to be hooked up to the CAEN digitizer so that the final
+channel numbers in the ROOT file make sense.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{solidworks_front_annotated_caen.png}
+\caption{Solidworks rendering of the front of the QA/QC jig showing which channels on the front panel should be hooked up to which channels on the CAEN digitizer.}
+\label{fig:solidworks-front-annotated-caen}
+\end{figure}
+
+\section{Data Analysis}
+After running the GUI and pressing ``Take Data'' the script will take data and
+save it to a local HDF5 file. The name of this file will be
+\texttt{module\_BARCODE.hdf5}. The size of this file will depend on the number
+of SPE events and LYSO events you take. For a ``full'' analysis, we recommend
+taking 100,000 SPE events and 500,000 LYSO events. This will produce an HDF5
+file which is roughly 70 GB. However, we hope that as the fitting procedure is
+refined, for the final QA/QC the number needed will be closer to 10,000 and
+50,000 respectively which should be closer to 7 GB.
+
+After taking the data, the GUI will automatically analyze the data and produce
+a ROOT file called \texttt{module\_BARCODE.root}. This ROOT file contains all
+the histograms of the SPE charge distributions and Lutetium-176 distributions,
+the fits for these histograms, a TGraph showing the light yield as a function
+of channel number, a TGraph showing the SPE charge versus channel number, and a
+TGraph showing the charge per unit energy deposited (from the LYSO fit) versus
+channel number. Table~\ref{table:root-file-description} contains a list of all
+the objects in the ROOT file.
+
+\begin{table}
+\centering
+\begin{tabular}{c c}
+Object Name & Description \\ \hline
+lyso\_ch0;3 & The final fit of the Lutetium-176 charge distribution \\
+lyso\_ch0;2 & The initial fit of the Lutetium-176 charge distribution \\
+lyso\_ch0;1 & The Lutetium-176 charge distribution \\
+spe\_ch0;3 & The final fit of the SPE charge distribution \\
+spe\_ch0;2 & The initial fit of the SPE charge distribution \\
+spe\_ch0;1 & The SPE charge distribution \\
+spe\_ch0\_fit;1 & The TF1 object of the SPE fit \\
+lyso\_ch0\_fit;1 & The TF1 object of the Lutetium-176 fit \\
+light\_yield;1 & The TGraph of the light yield versus channel number \\
+pc\_per\_kev;1 & The TGraph of the charge per unit energy deposited versus channel number \\
+spe;1 & The TGraph of the SPE charge versus channel number \\
+\end{tabular}
+\caption{Table describing the various ROOT objects in the ROOT file. Only the data for channel 0 is shown in the table, but the actual ROOT file will contain histograms and function objects for all 32 channels.}
+\label{table:root-file-description}
+\end{table}
+
+\chapter{Hardware}
+The QA/QC jig should have come with the following pieces of hardware:
+
+\begin{itemize}
+\item 2 amplifier boards
+\item 2 ``3 module boards'' (eventually will send 4 to each institution)
+\item 1 control board
+\item 1 aluminum front panel
+\item 1 dark box (optional)
+\item 1 Intel NUC computer with a 2 TB NVME SSD (optional)
+\item 16 SMA to MCX connectors
+\item 1 DT5742 CAEN digitizer (each institution buys separately)
+\item 1 Meanwell RQ-125D power supply (+5,+12,-12,+24)
+\end{itemize}
+
+A Solidworks rendering of the minimal setup (without the dark box, digitizer,
+or power supplies) is shown in Figures~\ref{fig:solidworks-front} and
+\ref{fig:solidworks-back}.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{solidworks_front.png}
+\caption{Solidworks rendering of the setup. The front panel connects to a dark box and contains BNC connections for the DC voltage rails as well as the 16 outputs which connect to the CAEN digitizer.}
+\label{fig:solidworks-front}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{solidworks_back.png}
+\caption{Solidworks rendering of the setup. Here you can see the three main boards: the board on top is the control board, the board connecting to the front panel is the amplifier board, and the board connected to the LYSO modules is the 3 module board. The 3 module boards can be daisy chained to support up to 12 modules (at which point we run out of address space on the I2C bus).}
+\label{fig:solidworks-back}
+\end{figure}
+\section{Control Board}
+The control board is the ``brains'' of the setup. It contains a Teensy 4.1
+microcontroller which is responsible for talking to the other boards over
+header pins and a I2C bus to control the HV relays, attenuation relays, and TEC
+relays, as well as to read out the RTD and thermistor temperatures, etc.
+
+Power is supplied to the control board in the form of 3 voltages: +5V, -12V,
+and +24V (or +12V). These ``raw'' voltages are then put through linear
+regulators to supply the rest of the board's functionality. The board has a
+regulator to take the +5V raw signal and convert it to a ``clean'' +5V source
+for the Teensy and the attenuator relays (the big white panasonic relays on the
+amplifier board responsible for changing the gain of the system). The board
+also has a +3.3V regulator which produces the 3.3V signal which is used to turn
+the HV and TEC relays on and off. There are also linear regulators to convert
+the -12V and +5V ``raw'' voltages to +2V and -8V for the amplifier rails.
+Finally, there is a DC/DC boost converter which takes the +24V (or +12V) signal
+and boosts it up to more than 40V for the SiPM bias supply. Alternatively,
+there is a jumper which allows you to supply your own HV bias power supply. All
+of these are summarized in Table~\ref{table:power}.
+
+\begin{table}
+\centering
+\begin{tabular}{c c c}
+Input Voltage (V) & Output Voltage (V) & Purpose \\ \hline
++5  & +5   & Teensy and attenuator relays \\
+    & +3.3 & HV and TEC relays \\
+    & +2   & Amplifier rail \\ \hline
+-12 & -8   & Amplifier rail \\ \hline
++24 (or +12) & $>$ 40 V   & DC/DC boost converter
+\end{tabular}
+\caption{Summary of the various input and output voltages on the control board.}
+\label{table:power}
+\end{table}
+
+\section{Amplifier Board}
+The amplifier board is responsible for taking 8 analog signals from the SiPMs
+and amplifying them to be able to read out by the CAEN digitizer. There are two
+gain paths which are controlled by a relay at the end of the board near the SMA
+connectors: the unattenuated high gain path and the attenuated low gain path.
+
+To be able to detect single photons on the unattenuated high gain path, the
+current signal from the SiPM is about 10 microamps. This signal then goes
+through the first stage transimpedance amplifier with a gain of approximately
+500 V/A. This turns the 10 microamp signal into a 5 mV voltage signal. This
+signal then goes through the second stage non-inverting amp stage with a gain
+of approximately 4 and we get out a 20 mV voltage signal.
+
+\subsection{Attenuation}
+
+The CAEN board can only detect voltage signals with a 1V dynamic range.
+Therefore it is necessary to attenuate the output signal when we are looking at
+higher energy radioactive sources. When the relay closes, the signal from the
+output of the second stage goes through a pi pad attenuator which reduces the
+signal by a factor of approximately 5.85.
+
+Initially this pi pad attenuator was designed to have an attenuation of a
+factor of 4 and an impedance of 50 ohms to match the transmission line of the
+SMA cable. However, when testing the new higher gain SiPMs we realized that we
+were actually being limited by the 50 mA current limit on the second stage op
+amp, and so couldn't even drive the full 4V necessary from the second stage to
+hit the 1V limit of the CAEN after the attenuator. To solve this problem we
+instead designed the pi pad attenuator to have an impedance of 100 ohms. Now,
+since we are not actually driving a 100 ohm load (the CAEN is fixed to 50
+ohms), this means that the voltage seen at the CAEN board will no longer be a
+factor of 4 smaller than the input voltage, but the op amp will see a higher
+resistance and thus need to supply a lower current. To find out the actual
+voltage ratio between the output of the second op amp and what we see on the
+CAEN digitizer we wrote a short python script which can be found at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/pi_pad_calculator.py}.
+
+\section{3 Module Board}
+The 3 module board is responsible for connecting to the actual scintillator
+modules and controlling the HV relays. The way that we multiplex up to 12
+modules with 384 channels to be read out by only 16 digitizer channels is by
+connecting multiple SiPM channels to the same output line and then selectively
+turning on the bias voltage for only a single channel at a time. This is done
+by sending a command on the I2C bus to tell a small PCA9557PW chip to set an
+output high which in turn starts conducting a MOSFET which causes a relay to
+close allowing 8 channels to see the SiPM bias voltage.
+
+In addition, this board contains the electronics to read out the RTDs on each
+SiPM. The design of this system is discussed in more detail in
+Appendix~\ref{appendix:rtd}.
+
+This board can also read out the current flowing through each set of TECs. To
+measure the total TEC resistance (which is a good indicator of whether they are
+broken), we use the Teensy to turn the TEC relays for a single module on for
+approximately 1 ms. During this 1 ms, we quickly measure the current flowing to
+the TEC and from this we can determine the overall resistance. We keep the time
+the current is flowing to 1 ms or less because as you flow more current through
+the TECs they will start to heat up/cool down and the resistance will change.
+The function which computes this can be found at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/firmware/firmware.ino#L622}.
+
+\chapter{Software}
+
+There are several different software programs that have been developed to
+interact with the QA/QC jig which will be described in the sections below. All
+of the code is at \url{https://github.com/alatorre-caltech/dt5742}\footnote{The
+name of this repository is the model number for the CAEN digitizer we are using
+and was chosen because it started just to have the C code to take data from the
+digitizer}. The installation is discussed in Chapter~\ref{chapter:setup}, but can be done simply by running:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ git clone https://github.com/alatorre-caltech/dt5742
+$ cd dt5742
+$ make install-deps
+$ make
+$ sudo make install
+\end{lstlisting}
+\end{mdframed}
+
+During the last command, all of the scripts are installed to /usr/local/bin so
+that they are available via the command line without having to be in the
+directory anymore. You can test this out by running:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ cd
+$ wavedump --help
+usage: wavedump -o [OUTPUT] -n [NUMBER] [CONFIG_FILE]
+  -t, --trigger Type of trigger: "software", "external", or "self".
+  -l, --label   Name of hdf5 group to write data to (lyso, spe)
+  --threshold   Trigger threshold (volts) (default: -0.1)
+  --gzip-compression-level
+                gzip compression level (default: 0)
+  --channel-map
+                which half of the module is being recorded (default: -1)
+  --help        Output this help and exit.
+\end{lstlisting}
+\end{mdframed}
+
+\section{wavedump}
+This is a C program which takes data from the CAEN digitizer and writes it out
+to HDF5 files which can then be analyzed from python scripts. You can find the
+main program at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/wavedump/src/wavedump.c}.
+A simple example to take 100,000 software triggered events for single photon
+analysis is:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ wavedump -o output.hdf5 --trigger software -n 10000 -l spe
+\end{lstlisting}
+\end{mdframed}
+
+You can then look at the waveforms using python:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ python
+>>> import h5py
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> f = h5py.File("output.hdf5","r")
+>>> xinc = 1/(f['spe'].attrs['drs4_frequency'] * 10**6)
+>>> points = f['spe'].attrs['record_length']
+>>> x = np.linspace(0, xinc * points, int(points)) - xinc * points * (1 - f['spe'].attrs['post_trigger']/100)
+>>> data = f['spe']['ch0'][:100] # get the first 100 events
+>>> data -= np.median(data,axis=-1)[:,np.newaxis] # subtract baseline
+>>> data /= 2**12
+>>> plt.plot(x,data[0])
+>>> plt.show()
+\end{lstlisting}
+\end{mdframed}
+
+Similarly, you can take 100,000 self triggered events to take data with a
+source (or to just look at the energy distribution of the internal Lutetium-176
+background radiation:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ wavedump -o output.hdf5 --trigger self --threshold -0.1 -n 10000 -l lyso
+\end{lstlisting}
+\end{mdframed}
+
+\section{analyze-waveforms}
+
+Analyze-waveforms is a python script used to analyze data taken with the jig.
+You can find the source code at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/python/analyze-waveforms}.
+Specifically it does the following things:
+
+\begin{itemize}
+\item baseline subtraction
+\item integrates waveforms over a fixed window to get charge distributions
+\item fits single photon charge distribution to determine the single photon charge
+\item fits the Lutetium-176 charge distribution to determine the charge per unit energy deposited
+\item uploads results to the database
+\item writes out the light yield and all distributions and fits to a ROOT file
+\end{itemize}
+
+Supposing you took both single PE data and LYSO data with the following commands:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ wavedump -o output.hdf5 --trigger software -n 100000 -l spe
+$ wavedump -o output.hdf5 --trigger self --threshold -0.05 -n 500000 -l lyso
+\end{lstlisting}
+\end{mdframed}
+
+You can analyze it using the following command:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ analyze-waveforms output.hdf5 -o output.root
+\end{lstlisting}
+\end{mdframed}
+
+This will output a ROOT file called output.root which contains all the charge distributions, fits, and measured light yields.
+
+\section{qaqc-client}
+\label{sec:qaqc-client}
+
+This is a small python script used to talk to the Teensy over UDP. An example:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ qaqc-client --ip-address 192.168.1.177
+>>> help
+\end{lstlisting}
+\end{mdframed}
+
+\subsection{Commands}
+The following is a list of commands you can send to the Teensy (note: for
+normal operations you should always use the GUI, but this is for advanced
+users).
+
+\begin{description}
+\item[tec\_write CARD TEC ON/OFF] This command turns the TEC relays on or off. CARD should be the binary address set on the DIP switch on the 3 module board, TEC should be 0, 1, or 2 and specifies which relay to open on the board.
+\item[hv\_write CARD TEC ON/OFF] This command turns the HV relays on or off.
+\item[thermistor\_read CARD ADDRESS] This command reads the RTD temperature in Celsius on a given board. ADDRESS should be 0, 1, or 2.
+\item[tec\_sense\_read CARD] This command reads the low level current measurement for the TEC current draw.
+\item[tec\_check CARD ADDRESS] This command reads the resistance of the TEC on board CARD. ADDRESS should be 0, 1 or 2. It does this by turning on the relay for the given TEC for 1 ms and then quickly measuring the current. This makes sure that the TEC doesn't have time to heat up and change resistance. A working TEC should return about 14 ohms.
+\item[reset] This command resets the board.
+\item[poll CARD ON/OFF] Set up automatic polling of the temperatures and TEC current for a given board. The output is only visible in the serial monitor.
+\item[set\_active\_bitmask BITMASK] Gives a bitmask of which boards are present. This prevents errors when resetting the board. For example, if you only have two boards present (0 and 1) you could run set\_active\_bitmask 0x3.
+\item[debug ON/OFF] Turn debug messages on or off.
+\item[set\_attenuation ON/OFF] Turn on or off the attenuation. You should hear a series of clicks when you run this command.
+\item[step\_home] Move the stepper motor to home (not tested at all)
+\item[step STEPS] Move the stepper motor a certain number of steps (not tested at all)
+\item[bias\_iread] Reads the bias current from the DC/DC boost converter. Note that this current is not super useful as we have diodes with bias resistors in series with the SiPMs that will draw a few milliamps whenever you have relays open.
+\item[bias\_vread] Reads the bias voltage from the DC/DC boost converter.
+\item[extmon\_vread] Reads the bias voltage independent of whether you are using the DC/DC boost converter or an external supply. Note that this value should be calibrated to be the exact value applied to the SiPM so it will be lower than what you measure on the board since there is a voltage drop across the diode in series with the SiPM.
+\item[set\_hv VOLTAGE] Sets the voltage output by the DC/DC boost converter.
+\item[disable\_hv] Disable the DC/DC boost converter.
+\item[enable\_dac] Enable the DAC for the DC/DC boost converter.
+\end{description}
+
+\section{qaqc-gui}
+\label{sec:qaqc-gui}
+The QA/QC GUI is a python Tkinter script which can be found at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/python/qaqc-gui}.
+To run the GUI you can run:
+
+\begin{mdframed}[backgroundcolor=light-gray, roundcorner=10pt,leftmargin=1, rightmargin=1, innerleftmargin=15, innertopmargin=15,innerbottommargin=15, outerlinewidth=1, linecolor=light-gray]
+\begin{lstlisting}
+$ qaqc-gui --ip-address 192.168.1.177
+\end{lstlisting}
+\end{mdframed}
+
+Figure~\ref{fig:qaqc-gui-annotated} shows the QA/QC GUI window and some of the
+functions.
+
+Most of the logic in the GUI is for taking data. When you press the ``Take Data'' button the GUI does a series of steps:
+
+\begin{enumerate}
+\item Opens all HV relays
+\item Sets the HV to the value specified in the GUI
+\item Closes the two relays on either side of the jig for the first module
+\item Turns the attenuation off to take single PE data
+\item Runs the wavedump program to take single PE data
+\item Turns the attenuation on to take Lutetium-176 data
+\item Runs the wavedump program to take Lutetium-176 data
+\item Opens the two relays
+\item Repeats steps 3-8 for the next set of relays for the first module
+\item Analyze the data using the analyze-waveforms program
+\item Repeat all the above steps for any additional modules
+\end{enumerate}
+
+The tricky part in doing all this is making sure that you open the correct
+relays and mapping the channels in the output file so that they have some
+physical meaning. The mapping between physical locations on the module and the
+channel number in the HDF5 file is shown in
+Figure~\ref{fig:solidworks-back-annotated}.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{qaqc_gui_annotated.png}
+\caption{A screenshot of the qaqc-gui program along with descriptions of what the buttons and inputs do.}
+\label{fig:qaqc-gui-annotated}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{solidworks_back_annotated.png}
+\caption{A Solidworks rendering of the back of the QA/QC jig with the mapping between the physical location on the module and channel number annotated.}
+\label{fig:solidworks-back-annotated}
+\end{figure}
+
+\section{Website}
+\label{sec:website}
+To easily see the results of the analysis, we put together a website at
+\url{http://btl-testing.hep.caltech.edu}. You can see an example screenshot in
+Figure~\ref{fig:module-database}. The main page shows a list of recently tested
+modules along with voltage, the average light yield, and whether it passed. You
+can click on any one of these rows and it will then show you all the tests that
+have been run for that specific module. Clicking on a row here will take you to
+the page shown in Figure~\ref{fig:run-status} which shows the results for a
+single run. Clicking on a channel at the bottom of this page will take you to
+the page shown in Figure~\ref{fig:channel-status} which shows the results for a
+single channel.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{module_database.png}
+\caption{Screenshot of the main page.}
+\label{fig:module-database}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{run_status.png}
+\caption[Screenshot of the page showing the status of 1 run.]{Screenshot of the page showing the status of 1 run. The upper right corner shows a plot of the light output vs channel.}
+\label{fig:run-status}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{channel_status.png}
+\caption{Screenshot of the page showing the results of a single channel. The upper right corner shows a plot of the Lutetium-176 charge distribution and the fit and the plot below that shows the single photoelectron charge fit.}
+\label{fig:channel-status}
+\end{figure}
+
+All of the code powering the website can be found at
+\url{https://github.com/alatorre-caltech/dt5742/tree/master/website}. This code
+is currently running on a virtual machine on the Caltech Tier2 cluster, but can
+in principle be run anywhere.
+
+The main component of the webpage is the database which holds all the results.
+This is a postgres database whose schema can be found at
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/website/btl_qa.sql}.
+When you take data and upload it, the data gets uploaded to the database. Then,
+when you go to the webpage, the server queries the database and displays the
+data.
+
+The web server is a \href{https://flask.palletsprojects.com/en/2.3.x/}{flask}
+python script which operates behind nginx. Nginx initially takes the web
+request, handles any static requests (since python is relatively slow), and
+forwards any dynamic requests (to fetch data from the database for example) to
+the flask app. This architecture also allows us to use multiple flask processes
+to increase the bandwidth. In principle, it should support 100s of concurrent
+connections.
+
+\chapter{Fitting LYSO Intrinsic Spectrum}
+This chapter summarizes the model we use to fit the intrinsic LYSO
+radioactivity spectrum for the Caltech QA/QC module tester.
+\section{Introduction}
+LYSO has an instrinsic unstable isotope of $^{176}\mathrm{Lu}$ which undergoes
+a beta decay with endpoint 593 keV to $^{176}\mathrm{Hf}$\cite{sanchez}. After
+undergoing beta decay, the $\mathrm{Hf}$ nucleus then de-excites emitting
+gammas with energies of 88 keV, 202 keV, and 307 keV. We can use this intrinsic
+radioactivity to determine the light yield in terms of charge per unit energy
+deposited.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{lyso.png}
+\caption{LYSO decay scheme from Reference~\cite{sanchez}}
+\end{figure}
+
+Ideally we would like to make the analysis simple by looking simply for the
+gamma lines so we only have to fit a gaussian distribution. However, when we
+tested our ability to do this by looking for coincidences between the initial
+beta decay in one bar and then looking for the gammas to travel to a
+neighboring bar there were two big problems. First, if we looked at bars two
+neighbors down from the bar which had the beta decay, the rate for observing
+the 202 keV and 307 keV gamma were so low that it would take many hours to get
+enough statistics to barely be able to make out the gamma lines. Second, if we
+look in the direct neighboring bar, although we are able to see the gamma lines
+much faster, we were worried that the optical crosstalk would make a
+measurement of the light yield unreliable. In addition, the fact that we
+required coincidences meant that we could no longer determine the light yield
+of a bar independently of the other bars. Therefore, we decided to fit the full
+beta decay spectrum by looking at the charge in a single bar and not looking
+for coincidences.
+
+\section{Fitting the Intrinsic LYSO Spectrum}
+We can calculate the expected charge distribution as follows:
+
+\begin{equation}
+P(q\mid \hat{y}) = \int_E P(q\mid E, \hat{y}) P(E) \mathrm{d}E
+\end{equation}
+
+where $P(q\mid \hat{y})$ is the probability of observing charge $q$ given an
+average charge per energy deposited $\hat{y}$ (the average charge per energy
+deposited is assumed to be at the center of the bar), and $P(E)$ is the
+probability of observing an energy $E$ in keV deposited in the crystal. $P(E)$
+is given by a weighted sum of beta decay distributions offset by the possible
+gamma captures, i.e.
+
+\begin{multline}
+P(E) = \alpha_{88} \beta(E-88 \mathrm{keV}) +
+       \alpha_{202} \delta(E - 202) +
+       \alpha_{290} \beta(E-290 \mathrm{keV}) +
+       \alpha_{307} \delta(E - 307) \\
+       + \alpha_{395} \beta(E-395 \mathrm{keV}) +
+       \alpha_{509} \delta(E - 509) +
+       \alpha_{597} \beta(E-597 \mathrm{keV})
+\end{multline}
+
+where $\beta(E)$ is the beta decay distribution for $^{176}\mathrm{Lu}$,
+$\alpha_{88}$ is the probability of the beta decay and the 88 keV gamma
+capturing, $\alpha_{290}$ is the probability of the beta decay and the 88 keV
+and 202 keV gamma capturing, $\alpha{202}$ is the probability of only observing
+the 202 keV gamma, etc. We do not include any terms in which the 88 keV gamma
+doesn't capture since that is very unlikely\cite{sanchez}.
+
+Next, we integrate over the light yield at different points along the bar.
+Although this is likely not perfectly symmetric in the real bars, we assume it
+is here for simplicity of fitting since we don't expect a more complicated
+model to have any noticeable effect on the final fit.
+
+\begin{equation}
+P(q\mid \hat{y}) = \int_E P(E) \int_y P(q\mid E, y, \hat{y}) P(y\mid \hat{y}, E) \mathrm{d}y \mathrm{d}E
+\label{eq:prob-q}
+\end{equation}
+
+We can now make some simplifications. Since the light yield doesn't depend on the energy $E$
+
+\begin{equation}
+P(y\mid \hat{y}, E) \equiv P(y\mid \hat{y})
+\end{equation}
+
+Also, the probability of observing a charge $q$ is independent of $\hat{y}$ once $y$ is specified
+
+\begin{equation}
+P(q\mid E, y, \hat{y}) \equiv P(q\mid E, y)
+\end{equation}
+
+Therefore,
+
+\begin{equation}
+P(q\mid \hat{y}) = \int_E P(E) \int_y P(q\mid E, y) P(y\mid \hat{y}) \mathrm{d}y \mathrm{d}E
+\end{equation}
+
+Now, in principle we would sum over the number of photoelectrons produced, but
+we would like this fit to be independent of the single photoelectron (SPE)
+charge. Instead, we assume that the charge distribution for a given energy $E$
+and light yield $y$ is given by
+
+\begin{equation}
+P(q\mid E, y) = \frac{1}{\sqrt{2 \pi \sigma}}e^{-\frac{(q-E y)^2}{2\sigma^2}}
+\end{equation}
+
+where $\sigma$ is an approximation made by assuming an average SPE charge
+
+\begin{equation}
+\sigma(y) \approx \sqrt{\frac{E y}{q_\mathrm{SPE}}}q_\mathrm{SPE}
+\end{equation}
+
+Therefore
+
+\begin{equation}
+P(q\mid \hat{y}) = \int_E P(E) \int_y \frac{1}{\sqrt{2 \pi \sigma(y)}}e^{-\frac{(q-E y)^2}{2\sigma(y)^2}} P(y\mid \hat{y}) \mathrm{d}y \mathrm{d}E
+\end{equation}
+
+Finally, we make the simplifying assumption that $P(y\mid\hat{y})$ is a constant over some range $\hat{y} - \Delta y$ to $\hat{y} + \Delta y$:
+
+\begin{equation}
+P(q\mid \hat{y}) = \frac{1}{2 \Delta y}\int_E P(E) \int_{\hat{y} - \Delta y}^{\hat{y} + \Delta y} \frac{1}{\sqrt{2 \pi \sigma(y)}}e^{-\frac{(q-E y)^2}{2\sigma(y)^2}} \mathrm{d}y \mathrm{d}E
+\end{equation}
+
+The second integral can be written in the following closed form solution:
+
+\begin{multline}
+P(q\mid \hat{y}) = \frac{1}{2 \Delta y} \int_E P(E) \\
+\frac{1}{2 E}\left[
+-\mathrm{Erf}\left(\frac{-q+(\hat{y} - \Delta y) E}{\sqrt{2 (\hat{y} - \Delta y)q_\mathrm{SPE} E}}\right)
++\mathrm{Erf}\left(\frac{-q+(\hat{y} + \Delta y) E}{\sqrt{2 (\hat{y} + \Delta y)q_\mathrm{SPE} E}}\right) \right.\\
+\left.+ e^{\frac{2 q}{q_\mathrm{SPE}}} \left(\mathrm{Erf}\left(\frac{q+(\hat{y} + \Delta y) E}{\sqrt{2 (\hat{y} + \Delta y)q_\mathrm{SPE} E}}\right)
+- \mathrm{Erf}\left(\frac{q+(\hat{y} - \Delta y) E}{\sqrt{2 (\hat{y} - \Delta y)q_\mathrm{SPE} E}}\right) \right) \right] \mathrm{d}E
+\end{multline}
+
+Note that computing this is very susceptiple to floating point problems. The
+two terms with $e^{\frac{2 q}{q_\mathrm{SPE}}}$ should be grouped together to
+avoid problems.
+
+This integral is performed numerically using numpy's trapz function.
+\section{Cuts}
+The likelihood function described in the previous section assumes no crosstalk
+between channels. The actualy LYSO crystals will have a significant
+(approximately 15\%) amount of crosstalk between neighboring crystals. This
+crosstalk is caused primarly by photons leaking from one SiPM to the next in
+the glue layer between the SiPMs and the LYSO. Modelling this crosstalk in the
+likelihood function is possible but tricky because we don't know the crosstalk
+amount a priori and it may be more or less than the average depending on the
+location of the event and how well everything was glued.
+
+To cut events which are likely to contain crosstalk we cut events in which
+there is a significant amount of charge in neighboring crystals (see
+\url{https://github.com/alatorre-caltech/dt5742/blob/ee9e61a448b6ab8e9ddb229288ae692085de7eb6/python/analyze-waveforms#L539}.
+The idea here is to cut any events in which a gamma escaped the current crystal
+and interacted in a neighboring crystal. This works surprisingly well and
+produces fits which fit surprisingly well (see
+Figure~\ref{fig:module-572-lyso-fit}). The only problem is with channels 7, 8,
+23, and 24 which are near the middle of the module. For these channels, there
+is always an adjacent channel which is not powered when we are taking data.
+This means that it is possible for a beta decay to happen in an unpowered bar
+and a gamma to scatter in the powered bar. In this case, we will get a lot of
+crosstalk from the adjacent unpowered bar. In the default fit, we actually fix
+the gamma peak parameters to 0 since they should be negligible. For these
+specific channels, we do allow the gamma peak parameters to float and this
+seems to work ok (it still doesn't address the fact that we don't model the
+crosstalk).
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{module_572_lyso_fit.png}
+\caption[Fit to the Lutetium-176 distribution.]{Fit to the Lutetium-176 distribution. The sharp edge on the left is due to the trigger threshold, so we don't fit that low. The highest peak is the start of the beta decay spectrum offset by 290 keV (88 keV and 202 keV gamma absorbed).}
+\label{fig:module-572-lyso-fit}
+\end{figure}
+
+\chapter{Fitting Single Photoelectron Charge}
+
+The fitting of the SPE charge histogram presents a challenge because of the
+relative infrequency of dark SPEs and weakness of their signal. Thus, the SPE
+charge histogram does not always yield discernible peaks (as can be seen in
+Figure~\ref{fig:good_find}), requiring that a mathematical model be used to fit
+the histogram and extrapolate the SPE charge. Our model includes seven
+parameters to account for all the major sources of variability and noise. We
+first assume that the charge of an SPE follows a Gaussian distribution with
+mean $\mu$ and standard deviation $\sigma$, which we denote $G_x(\mu, \sigma)$,
+where $G_x$ is the probability density of measuring charge $x$. The charge
+distribution of $n$ SPEs is then $G$ convolved with itself $n$ times, which is
+$G_x(n\mu, \sigma\sqrt{n})$ since $G_x(\mu_1, \sigma_1) * G_x(\mu_2, \sigma_2)
+= G_x(\mu_1 + \mu_2, \sqrt{\sigma_1^2 + \sigma_2^2})$.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{good_find.png}
+    \caption{SPE charge histogram without discernible peaks that was able to be fit with my implementation of the fitting algorithm. Preliminary fit curves in red,
+    final fit curve in green. Data acquired with the 3-module and 8TIA boards using the CAEN digitizer.}
+    \label{fig:good_find}
+\end{figure}
+
+We now consider the probability that $n$ SPEs are detected in a given
+integration window. If the detection of SPEs were independent events, $n$ would
+follow a Poisson distribution\footnote{For a given number of SPEs produced,
+each of them have a probability of falling within the integration window. If we
+assume that each SPE has the same probability of being in this window, then $n$
+would follow a binomial distribution. However, we make the reasonable
+assumption that the total number of SPEs being produced is very large, and the
+probability of an SPE being detected is very small. In this limit, the binomial
+distribution approaches a Poisson distribution.}. However, according
+to~\citeauthor{Agnes_2021}~\cite{Agnes_2021}, there is a large enough
+probability that one SPE be correlated to the production of another (which can
+arise from SiPM pixel cross-talk) for this not to be the case. A distribution
+to model such behavior was conceived
+by~\citeauthor{Vinogradov}~\cite{Vinogradov}. Given the mean number of SPEs
+detected $\lambda$ and the probability that an SPE trigger a secondary SPE $p$,
+the probability of detecting $n$ SPEs is given by\footnote{To evaluate $V_n$ in
+the case where $p=0$, we define $V_n(\lambda, 0) \equiv \lim_{p \to 0}
+V_n(\lambda, p) = \frac{\lambda^n}{n!}e^{-\lambda}$, which is a Poisson
+distribution, as we would expect.}
+\begin{equation}
+    V_n(\lambda, p) = \frac{e^{-\lambda}}{n!} \sum_{i=0}^n B(i, n) \cdot (\lambda(1-p))^i \cdot p^{n-i}
+\end{equation}
+where
+\begin{equation}
+    B(i, n) = 
+    \begin{cases}
+        1 & \text{if } i=0 \text{ and } n=0\\
+        0 & \text{if } i=0 \text{ and } n>0\\
+        \frac{n!(n-1)!}{i!(i-1)!(n-i)!} & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+If we assume that a given region of integration contains an integer number of
+SPEs, then the combined SPE charge distribution for all $n$ is the sum of all
+$G_x(n\mu, \sigma\sqrt{n})$, each weighted by the $V_n(\lambda, p)$.
+\begin{equation}
+    \sum_{i=0}^\infty V_i(\lambda, p) \cdot G_x(i\mu, \sigma\sqrt{i}) 
+\end{equation}
+
+Finally, every waveform includes noise, mainly from the digitizer. We assume
+that this noise is centered at \SI{0}{V}, and its charge distribution is
+Gaussian with a standard deviation of $\Omega$. Our complete model is the
+convolution of the noise distribution with the SPE charge distribution.
+\begin{equation}
+G_x(0, \Omega) * \sum_{i=0}^\infty V_i(\lambda, p) \cdot G_x(i\mu, \sigma\sqrt{i})
+\end{equation}
+where `$*$' denotes the convolution operator. Since convolutions are linear, we
+have
+\begin{equation}
+\sum_{i=0}^\infty V_i(\lambda, p) \cdot G_x(i\mu, \sqrt{\Omega^2 + i\sigma^2})
+\end{equation}
+Finally, we add a simple horizontal offset parameter $h$, and vertical scale
+parameter $s$, making our final model:
+\begin{equation}
+M_x(s, h, \lambda, \mu, \Omega, \sigma, p) = s \cdot \sum_{i=0}^\infty V_i(\lambda, p) \cdot G_{x-h}(i\mu, \sqrt{\Omega^2 + i\sigma^2})
+\end{equation}
+where $M_x$ is the probability density of measuring a charge $x$ from an SPE
+waveform. In reality, we truncate this sum after at most 20 terms since
+$V_i(\lambda, p)$ diminishes quickly as a function of $i$. 
+
+This model is implemented in
+\url{https://github.com/alatorre-caltech/dt5742/blob/master/python/btl/fit_511_funcs.py},
+and uses CERN's data analysis library ROOT to fit the model to any given SPE
+charge histogram. However, with seven parameters, ROOT is unable to fit this
+model accurately without some of the parameters starting off close enough to
+their true values. Therefore, we estimate the values of several of the
+parameters using a generalized algorithm before performing a fit with ROOT. The
+process is described below.
+
+\begin{enumerate}
+    \item $p$ is temporarily fixed to zero. This effectively makes $V_n$ a
+    Poisson distribution.
+    
+    \item Try to find the offset of the zero peak by looking for the peak in
+    the charge distribution less than 0.
+
+    \item\label{sp:fit_gaus} The histogram gets fit with a Gaussian curve
+    initialized with the mean equal to the peak found in the previous step.
+    This fit provides a good estimate of $\Omega$.
+    
+    \item The location and standard deviation of the noise peak is used to
+    estimate $\lambda$. Approximately 95\% of all the events that detected no
+    SPE lie within $h \pm 2 \Omega$. Taking all the histogram entries in this
+    range and dividing by the total number of entries gives $V_0$. With our
+    assumption that $p \approx 0$, we can solve for $\lambda$.
+    
+    \item Using a mixture of Gaussians method~\cite{gaus_mix}, the previous
+    estimate give us enough information to also estimate $\mu$. For any
+    normalized linear combination of Gaussian distributions:
+    \begin{equation}
+        S = \sum_{i=0}^k \alpha_i G_x(\mu_i, \sigma_i)
+    \end{equation}
+    where $\sum_{i=0}^k \alpha_i = 1$, the mean of $S$ is equivalent to
+    $\sum_{i=0}^k \alpha_i \mu_i$. In our situation, $\alpha_i = V_i(\lambda,
+    p)$, which we can already estimate for all $i$. Furthermore, $\mu_i = i\mu
+    + h$ (note that $G_{x-h}(\mu, \sigma) = G_x(\mu+h, \sigma)$). Thus
+    \begin{equation}\label{eq:mu_estimate}
+        \text{Total mean of the SPE histogram} = \sum_{i=0}^k V_i(\lambda, p)(i\mu + h)
+    \end{equation}
+    where $k$ is an arbitrary integer we use to set the degree of precision. In
+    Equation~\ref{eq:mu_estimate}, $\mu$ is only parameter which does not have
+    an estimate yet, allowing us to solve for it.
+    
+    \item The only parameter that has yet to be estimated is $\sigma$, which we
+    initialize to zero. For one, we hypothesize that it is much less
+    significant than $\Omega$, and two, this encourages ROOT's fit algorithm to
+    maintain discernible peaks in the model.
+\end{enumerate}
+
+After all the parameters have been estimated, ROOT performs two fits of the
+model. The first leaves all parameters fixed except $\lambda$ and $\mu$ since
+these are the parameters that have the greatest influence on the relative
+height and positioning of the peaks, and are most important to have as accurate
+as possible. The second fit unfixes all parameters except $h$ as a final,
+all-encompassing, estimation of all the parameters. $h$ is left fixed since
+there is no mathematical discrepancy between it and the mean of the fitted
+Gaussian in step~\ref{sp:fit_gaus}. The charge of an SPE is recorded as $\mu$
+after the final fit is performed.
+
+\chapter{Schematics}
+\includepdf[pages=1,scale=.8,pagecommand={\section{Control Board}}]{controlBoardV1.pdf}
+\includepdf[pages=2-,scale=.8,pagecommand={}]{controlBoardV1.pdf}
+\includepdf[pages=1,scale=.8,pagecommand={\section{HV Elevator}}]{HV_elevator.pdf}
+\includepdf[pages=2-,scale=.8,pagecommand={}]{HV_elevator.pdf}
+\includepdf[pages=1,scale=.8,pagecommand={\section{Amplifier Board}}]{8TIA_readout_V3.pdf}
+\includepdf[pages=2-,scale=.8,pagecommand={}]{8TIA_readout_V3.pdf}
+\includepdf[pages=1,scale=.8,pagecommand={\section{Amplifier Board (side B)}}]{8TIA_readout_V3_SideB.pdf}
+\includepdf[pages=2-,scale=.8,pagecommand={}]{8TIA_readout_V3_SideB.pdf}
+\includepdf[pages=1,scale=.8,pagecommand={\section{3 Module Board}}]{QC_3mod_V4.pdf}
+\includepdf[pages={2,50},scale=.8,pagecommand={}]{QC_3mod_V4.pdf}
+\section{Teensy}
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.8\textwidth]{card11a_rev4_web.pdf}
+\caption{Teensy 4.1 pinout}
+\label{teensy-pinout}
+\end{figure}
+\printbibliography
+\appendix
+\chapter{RTD Readout Calculations}
+\label{appendix:rtd}
+This document is designed to show the calculations and schematic for the readout of the PT1000 RTDs on the SiPM packages.
+\section{Requirements}
+\begin{enumerate}
+\item Be able to calculate the temperature in the range -50 C - 100 C
+\item Be able to distinguish temperatures around room temperature with a precision of 0.1 degree C
+\end{enumerate}
+The output voltage will be read by the AD5593R (datasheet here:
+\url{https://www.analog.com/media/en/technical-documentation/data-sheets/ad5593r.pdf})
+which has a 12 bit ADC. The resolution should theoretically be:
+
+\begin{equation}
+\delta = \frac{2.5 \mathrm{V}}{2^{12}} \approx 1 \mathrm{mV}
+\end{equation}
+\section{Schematic}
+Figure~\ref{schematic} shows a schematic of the RTD readout scheme. This scheme
+is suggested at \url{https://www.ti.com/lit/ug/tidu969/tidu969.pdf}. The
+amplifier used is the INA326 whose datasheet can be found at
+\url{https://www.ti.com/lit/ds/symlink/ina326.pdf}, and the two current sources
+are provided by the REF200 which can be found here:
+\url{https://www.ti.com/lit/ds/symlink/ref200.pdf}.
+
+Note that right now the two current sources are powered by the 3.3 V rail and
+the op amp is powered by the 2.5 V voltage reference provided by the AD5593R. I
+don't think either of these is critical. I chose to use the 2.5 V reference
+just because it's conveniently close and the 3.3 V rail is easier to access so
+the REF200 chips can be placed more freely on the board.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{schematic.png}
+\caption{Schematic of RTD readout scheme}
+\label{schematic}
+\end{figure}
+
+\section{Calculation}
+The PT1000 RTD should have the following resistances at the extreme temperatures we want:
+\begin{align}
+\mathrm{R}(-50 \mathrm{C}) &= 803.1 \Omega \\
+\mathrm{R}(100 \mathrm{C}) &= 1385.1 \Omega
+\end{align}
+Next, we can calculate the required gain:
+\begin{align}
+G = \frac{\mathrm{V}_\mathrm{out,max}-\mathrm{V}_\mathrm{in,max}}{\left(\mathrm{RTD}_\mathrm{max}-\mathrm{RTD}_\mathrm{min}\right)I_\mathrm{ref}} = \frac{2.5 \mathrm{V} - 0.1 \mathrm{V}}{\left(1385.1 \Omega - 803.1 \Omega\right) 100 \mu \mathrm{A}} = 41.23 \mathrm{V/V}
+\end{align}
+From Table 2 in \url{https://www.ti.com/lit/ug/tidu969/tidu969.pdf} we see a standard value for R1 and C2 is 20k and 0.5 nF. We can calculate R2 as:
+\begin{equation}
+\mathrm{R2} = \frac{\mathrm{G} \mathrm{R1}}{2} = \frac{41.23 20\mathrm{k}}{2} = 412.3\mathrm{k}
+\end{equation}
+and we can just choose a standard value of 400k.
+
+So our actual gain will be
+\begin{equation}
+\mathrm{G} = 2\frac{\mathrm{R2}}{\mathrm{R1}} = \frac{400\mathrm{k}}{20\mathrm{k}} = 40
+\end{equation}
+
+Finally, we can calculate the value of R3:
+\begin{equation}
+\mathrm{R3} = \frac{\mathrm{G}\cdot\mathrm{I}_\mathrm{ref}\cdot\mathrm{RTD}_\mathrm{min} - \mathrm{V}_\mathrm{out,min}}{\mathrm{G}\mathrm{I}_\mathrm{ref}} = \frac{40 \cdot 100 \mu \mathrm{A} \cdot 803.1 \Omega - 0.1 \mathrm{V}}{40 \cdot 100 \mu \mathrm{A}} = 778.1 \Omega
+\end{equation}
+
+Now, we can check if we are able to actually distinguish 0.1 degrees C.
+\begin{align}
+\mathrm{R}(20 \mathrm{C}) &= 1077.9 \Omega \\
+\mathrm{R}(20.1 \mathrm{C}) &= 1078.3 \Omega
+\end{align}
+
+The voltage across the RTD is
+\begin{align}
+\mathrm{V}_\mathrm{RTD} = \mathrm{I}_\mathrm{ref}\cdot\mathrm{R}_\mathrm{RTD}
+\end{align}
+while the voltage across R3 is
+\begin{align}
+\mathrm{V}_\mathrm{3} = \mathrm{I}_\mathrm{ref}\cdot\mathrm{R}_\mathrm{3}
+\end{align}
+Therefore the output voltage is
+\begin{align}
+\mathrm{V}_\mathrm{out} = \mathrm{G}\cdot\left(\mathrm{V}_\mathrm{RTD}-\mathrm{V}_3\right) = \mathrm{G}\cdot\mathrm{I}_\mathrm{ref}\cdot\left(\mathrm{R}_\mathrm{RTD} - \mathrm{R}_\mathrm{3}\right)
+\end{align}
+So the difference in voltages will be
+\begin{align}
+\mathrm{V}_\mathrm{out}(20 \mathrm{C}) &= 40 \cdot 100 \mu \mathrm{A} \cdot \left(1077.9 - 778.1\right) = 1.1992 \\
+\mathrm{V}_\mathrm{out}(20.1 \mathrm{C}) &= 40 \cdot 100 \mu \mathrm{A} \cdot \left(1078.3 - 778.1\right) = 1.2008
+\end{align}
+The difference is about 1 mV which is just barely within our ability to resolve.
+\section{Notes}
+As mentioned in the guide at \url{https://www.ti.com/lit/ug/tidu969/tidu969.pdf}, all components should be 1\% thin film resistors and X7R ceramic capacitors.
+\end{document}
