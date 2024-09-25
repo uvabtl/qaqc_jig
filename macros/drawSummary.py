@@ -159,9 +159,10 @@ for module in modules:
 
     # filling histos raw
     graph = rootfile.Get('g_spe_L_raw_vs_bar')
+    print (graph)
     for point in range(graph.GetN()):
         h_spe_L_ch.Fill(graph.GetPointY(point))
-    
+     
     graph = rootfile.Get('g_spe_R_raw_vs_bar')
     for point in range(graph.GetN()):
         h_spe_R_ch.Fill(graph.GetPointY(point))
@@ -324,40 +325,81 @@ c.Print('%s/h_LO_avg_ch.png'%plotDir)
 
 ########################################################################################################################
 
-###TO BE CORRECTED#############################
+c = ROOT.TCanvas('c_spe_raw_LR_ch','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_spe_raw_L_ch.SetTitle(';single p.e. charge [pC];entries raw')
+h_spe_raw_L_ch.SetFillStyle(3001)
+h_spe_raw_L_ch.SetFillColor(ROOT.kRed)
+h_spe_raw_L_ch.SetLineColor(ROOT.kRed)
+h_spe_raw_L_ch.GetYaxis().SetRangeUser(0.,1.1*max(h_spe_raw_L_ch.GetMaximum(),h_spe_raw_R_ch.GetMaximum()))
+h_spe_raw_L_ch.Draw()
+latex_L = ROOT.TLatex(0.64,0.70,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_raw_L_ch.GetMean(),h_spe_L_ch.GetRMS()/h_spe_raw_L_ch.GetMean()*100.))
+latex_L.SetNDC()
+latex_L.SetTextSize(0.05)
+latex_L.SetTextColor(ROOT.kRed)
+latex_L.Draw('same')
+h_spe_raw_R_ch.SetFillStyle(3001)
+h_spe_raw_R_ch.SetFillColor(ROOT.kBlue)
+h_spe_raw_R_ch.SetLineColor(ROOT.kBlue)
+h_spe_raw_R_ch.Draw('same')
+latex_R = ROOT.TLatex(0.64,0.40,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_raw_R_ch.GetMean(),h_spe_raw_R_ch.GetRMS()/h_spe_raw_R_ch.GetMean()*100.))
+latex_R.SetNDC()
+latex_R.SetTextSize(0.05)
+latex_R.SetTextColor(ROOT.kBlue)
+latex_R.Draw('same')
+c.Print('%s/h_spe_raw_LR_ch.png'%plotDir)
 
-237 ROOT.gPad.SetGridx()
-238 ROOT.gPad.SetGridy()
-239 h_spe_L_ch.SetTitle(';single p.e. charge [pC];entries')
-240 h_spe_L_ch.SetFillStyle(3001)
-241 h_spe_L_ch.SetFillColor(ROOT.kRed)
-242 h_spe_L_ch.SetLineColor(ROOT.kRed)
-243 h_spe_L_ch.GetYaxis().SetRangeUser(0.,1.1*max(h_spe_L_ch.GetMaximum(),h_spe_R_ch.GetMaximum()))
-244 h_spe_L_ch.Draw()
-245 latex_L = ROOT.TLatex(0.64,0.70,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_L_ch.GetMean(),h_spe_L_ch.GetRMS()/h_spe_L_ch.GetMean()*100.))
-246 latex_L.SetNDC()
-247 latex_L.SetTextSize(0.05)
-248 latex_L.SetTextColor(ROOT.kRed)
-249 latex_L.Draw('same')
-250 h_spe_R_ch.SetFillStyle(3001)
-251 h_spe_R_ch.SetFillColor(ROOT.kBlue)
-252 h_spe_R_ch.SetLineColor(ROOT.kBlue)
-253 h_spe_R_ch.Draw('same')
-254 latex_R = ROOT.TLatex(0.64,0.40,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_R_ch.GetMean(),h_spe_R_ch.GetRMS()/h_spe_R_ch.GetMean()*100.))
-255 latex_R.SetNDC()
-256 latex_R.SetTextSize(0.05)
-257 latex_R.SetTextColor(ROOT.kBlue)
-258 latex_R.Draw('same')
+
+c = ROOT.TCanvas('c_spe_LR_ch','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_spe_L_ch.SetTitle(';single p.e. charge [pC];entries')
+h_spe_L_ch.SetFillStyle(3001)
+h_spe_L_ch.SetFillColor(ROOT.kRed)
+h_spe_L_ch.SetLineColor(ROOT.kRed)
+h_spe_L_ch.GetYaxis().SetRangeUser(0.,1.1*max(h_spe_L_ch.GetMaximum(),h_spe_R_ch.GetMaximum()))
+h_spe_L_ch.Draw()
+latex_L = ROOT.TLatex(0.64,0.70,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_L_ch.GetMean(),h_spe_L_ch.GetRMS()/h_spe_L_ch.GetMean()*100.))
+latex_L.SetNDC()
+latex_L.SetTextSize(0.05)
+latex_L.SetTextColor(ROOT.kRed)
+latex_L.Draw('same')
+h_spe_R_ch.SetFillStyle(3001)
+h_spe_R_ch.SetFillColor(ROOT.kBlue)
+h_spe_R_ch.SetLineColor(ROOT.kBlue)
+h_spe_R_ch.Draw('same')
+latex_R = ROOT.TLatex(0.64,0.40,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_spe_R_ch.GetMean(),h_spe_R_ch.GetRMS()/h_spe_R_ch.GetMean()*100.))
+latex_R.SetNDC()
+latex_R.SetTextSize(0.05)
+latex_R.SetTextColor(ROOT.kBlue)
+latex_R.Draw('same')
 c.Print('%s/h_spe_LR_ch.png'%plotDir)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
 ####################################################################
 c = ROOT.TCanvas('c_LO_avg_ch','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-h_LO_raw_avg_ch.SetTitle(';bar light output [pe/MeV];entries')
-h_LO_raw_avg_ch.SetFillStyle(3001)
-h_LO_raw_avg_ch.SetFillColor(ROOT.kBlack)
-h_LO_raw_avg_ch.Draw()
+h_LO_avg_ch.SetTitle(';bar light output [pe/MeV];entries')
+h_LO_avg_ch.SetFillStyle(3001)
+h_LO_avg_ch.SetFillColor(ROOT.kBlack)
+h_LO_avg_ch.Draw()
 latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_avg_ch.GetMean(),h_LO_avg_ch.GetRMS()/h_LO_avg_ch.GetMean()*100.))
 latex.SetNDC()
 latex.SetTextSize(0.05)
@@ -376,7 +418,7 @@ h_LO_raw_avg_ch.SetTitle(';bar light output [pe/MeV] raw;entries')
 h_LO_raw_avg_ch.SetFillStyle(3001)
 h_LO_raw_avg_ch.SetFillColor(ROOT.kBlack)
 h_LO_raw_avg_ch.Draw()
-latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_raw_avg_ch.GetMean(),h_LO_raw_avg_ch.GetRMS()/h_LO_raw_avg_ch.GetMean()*100.)) ROOT.gPad.SetGridx()
+latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_avg_ch.GetMean(),h_LO_avg_ch.GetRMS()/h_LO_avg_ch.GetMean()*100.))
 latex.SetNDC()
 latex.SetTextSize(0.05)
 latex.Draw('same')
@@ -385,7 +427,7 @@ line_low.SetLineColor(ROOT.kGreen+1)
 line_low.SetLineWidth(4)
 line_low.SetLineStyle(2)
 line_low.Draw('same')
-c.Print('%s/h_LO_raw_avg_ch.png'%plotDir) ROOT.gPad.SetGridy()
+c.Print('%s/h_LO_raw_avg_ch.png'%plotDir) 
 
 #######################################################################################
 c = ROOT.TCanvas('c_LO_raw_avg_bar','',800,700)
@@ -393,11 +435,12 @@ h_LO_raw_avg_bar.SetTitle(';avg. bar light output [pe/MeV] raw;entries')
 h_LO_raw_avg_bar.SetFillStyle(3001)  
 h_LO_raw_avg_bar.SetFillColor(ROOT.kBlack)                                         
 h_LO_raw_avg_bar.Draw()                                                           
-latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(
+latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_raw_avg_bar.GetMean(),h_LO_raw_avg_bar.GetRMS()/h_LO_raw_avg_bar.GetMean()*100.))
 latex.SetNDC()                                                                    
 latex.SetTextSize(0.05)                                                                                                                           
-line_low = ROOT.TLine(0.85*3200.,0.,0.85*3200,1.05*h_LO_raw_avg_bar.GetMaximum()) )
+#line_low = ROOT.TLine(0.85*3200.,0.,0.85*3200,1.05*h_LO_raw_avg_bar.GetMaximum()) )
 latex.Draw('same') 
+line_low = ROOT.TLine(0.85*3200.,0.,0.85*3200,1.05*h_LO_raw_avg_bar.GetMaximum()) 
 line_low.SetLineColor(ROOT.kGreen+1)
 line_low.SetLineWidth(4)
 line_low.SetLineStyle(2)
@@ -410,7 +453,7 @@ h_LO_raw_avg_bar.SetTitle(';avg. bar light output [pe/MeV];entries')
 h_LO_raw_avg_bar.SetFillStyle(3001)
 h_LO_raw_avg_bar.SetFillColor(ROOT.kBlack)
 h_LO_raw_avg_bar.Draw()
-latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(
+latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_avg_bar.GetMean(),h_LO_avg_bar.GetRMS()/h_LO_avg_bar.GetMean()*100.))
 latex.SetNDC()
 latex.SetTextSize(0.05)
 latex.Draw('same') 
@@ -554,13 +597,13 @@ c.Print('%s/h_LO_LR_ch.png'%plotDir)
 
 ######################################################################################################################################################################################################################
 
-c = ROOT.TCanvas('c_LO_asymm_bar','',800,700)
+c = ROOT.TCanvas('c_LO_raw_asymm_bar','',800,700)
 ROOT.gPad.SetGridy()
-h_LO_asymm_bar.SetTitle(';avg. L.O. asymmetry [ 2*(L-R)/(L+R) ];entries')
-h_LO_asymm_bar.SetFillStyle(3001)
-h_LO_asymm_bar.SetFillColor(ROOT.kBlack)
-h_LO_asymm_bar.Draw()
-latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_asymm_bar.GetMean(),h_LO_asymm_bar.GetRMS()*100.))
+h_LO_raw_asymm_bar.SetTitle(';avg. L.O. asymmetry [ 2*(L-R)/(L+R) ];entries raw')
+h_LO_raw_asymm_bar.SetFillStyle(3001)
+h_LO_raw_asymm_bar.SetFillColor(ROOT.kBlack)
+h_LO_raw_asymm_bar.Draw()
+latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_raw_asymm_bar.GetMean(),h_LO_raw_asymm_bar.GetRMS()*100.))
 latex.SetNDC()
 latex.SetTextSize(0.05)
 latex.Draw('same') 
@@ -569,12 +612,12 @@ latex.Draw('same')
 # line_low.SetLineWidth(4)
 # line_low.SetLineStyle(2)
 # line_low.Draw('same')
-line_high = ROOT.TLine(0.1,0.,0.1,1.05*h_LO_asymm_bar.GetMaximum())
+line_high = ROOT.TLine(0.1,0.,0.1,1.05*h_LO_raw_asymm_bar.GetMaximum())
 line_high.SetLineColor(ROOT.kGreen+1)
 line_high.SetLineWidth(4)
 line_high.SetLineStyle(2)
 line_high.Draw('same')
-c.Print('%s/h_LO_asymm_bar.png'%plotDir)
+c.Print('%s/h_LO_raw_asymm_bar.png'%plotDir)
 
 
 c = ROOT.TCanvas('c_LO_asymm_bar','',800,700)
@@ -606,6 +649,31 @@ c.Print('%s/h_LO_asymm_bar.png'%plotDir)
 
 
 
+c = ROOT.TCanvas('c_LO_raw_asymm_ch','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_LO_raw_asymm_ch.SetTitle(';L.O. asymmetry [ 2*(L-R)/(L+R) ];entries raw')
+h_LO_raw_asymm_ch.SetFillStyle(3001)
+h_LO_raw_asymm_ch.SetFillColor(ROOT.kBlack)
+h_LO_raw_asymm_ch.Draw()
+latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_LO_raw_asymm_ch.GetMean(),h_LO_raw_asymm_ch.GetRMS()*100.))
+latex.SetNDC()
+latex.SetTextSize(0.05)
+latex.Draw('same') 
+line_low = ROOT.TLine(-0.2,0.,-0.2,1.05*h_LO_raw_asymm_ch.GetMaximum())
+line_low.SetLineColor(ROOT.kGreen+1)
+line_low.SetLineWidth(4)
+line_low.SetLineStyle(2)
+line_low.Draw('same')
+line_high = ROOT.TLine(0.2,0.,0.2,1.05*h_LO_raw_asymm_ch.GetMaximum())
+line_high.SetLineColor(ROOT.kGreen+1)
+line_high.SetLineWidth(4)
+line_high.SetLineStyle(2)
+line_high.Draw('same')
+c.Print('%s/h_LO_raw_asymm_ch.png'%plotDir)
+
+
+
 c = ROOT.TCanvas('c_LO_asymm_ch','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
@@ -629,7 +697,21 @@ line_high.SetLineStyle(2)
 line_high.Draw('same')
 c.Print('%s/h_LO_asymm_ch.png'%plotDir)
 
+########################################################################
 
+c = ROOT.TCanvas('c_LOrms_raw_bar','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_LOrms_raw_bar.SetTitle(';bar RMS [%];entries raw')
+h_LOrms_raw_bar.SetFillStyle(3001)
+h_LOrms_raw_bar.SetFillColor(ROOT.kBlack)
+h_LOrms_raw_bar.Draw()
+line = ROOT.TLine(5.,0.,5.,1.05*h_LOrms_raw_bar.GetMaximum())
+line.SetLineColor(ROOT.kGreen+1)
+line.SetLineWidth(4)
+line.SetLineStyle(2)
+line.Draw('same')
+c.Print('%s/h_LOrms_raw_bar.png'%plotDir)
 
 
 c = ROOT.TCanvas('c_LOrms_bar','',800,700)
@@ -646,6 +728,22 @@ line.SetLineStyle(2)
 line.Draw('same')
 c.Print('%s/h_LOrms_bar.png'%plotDir)
 
+######################################################
+c = ROOT.TCanvas('c_LOrms_raw_ch','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_LOrms_raw_ch.SetTitle(';channel RMS [%];entries raw')
+h_LOrms_raw_ch.SetFillStyle(3001)
+h_LOrms_raw_ch.SetFillColor(ROOT.kBlack)
+h_LOrms_raw_ch.Draw()
+line = ROOT.TLine(7.,0.,7.,1.05*h_LOrms_raw_ch.GetMaximum())
+line.SetLineColor(ROOT.kGreen+1)
+line.SetLineWidth(4)
+line.SetLineStyle(2)
+line.Draw('same')
+c.Print('%s/h_LOrms_raw_ch.png'%plotDir)
+
+
 c = ROOT.TCanvas('c_LOrms_ch','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
@@ -660,6 +758,20 @@ line.SetLineStyle(2)
 line.Draw('same')
 c.Print('%s/h_LOrms_ch.png'%plotDir)
 
+################################################################
+c = ROOT.TCanvas('c_LOmaxvar_raw_bar','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_LOmaxvar_raw_bar.SetTitle(';bar max. var. [%];entries raw')
+h_LOmaxvar_raw_bar.SetFillStyle(3001)
+h_LOmaxvar_raw_bar.SetFillColor(ROOT.kBlack)
+h_LOmaxvar_raw_bar.Draw()
+line = ROOT.TLine(30.,0.,30.,1.05*h_LOmaxvar_raw_bar.GetMaximum())
+line.SetLineColor(ROOT.kGreen+1)
+line.SetLineWidth(4)
+line.SetLineStyle(2)
+line.Draw('same')
+c.Print('%s/h_LOmaxvar_raw_bar.png'%plotDir)
 
 
 c = ROOT.TCanvas('c_LOmaxvar_bar','',800,700)
@@ -676,6 +788,22 @@ line.SetLineStyle(2)
 line.Draw('same')
 c.Print('%s/h_LOmaxvar_bar.png'%plotDir)
 
+#####################################################
+c = ROOT.TCanvas('c_LOmaxvar_raw_ch','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_LOmaxvar_raw_ch.SetTitle(';channel max. var. [%];entries raw')
+h_LOmaxvar_raw_ch.SetFillStyle(3001)
+h_LOmaxvar_raw_ch.SetFillColor(ROOT.kBlack)
+h_LOmaxvar_raw_ch.Draw()
+line = ROOT.TLine(40.,0.,40.,1.05*h_LOmaxvar_raw_ch.GetMaximum())
+line.SetLineColor(ROOT.kGreen+1)
+line.SetLineWidth(4)
+line.SetLineStyle(2)
+line.Draw('same')
+c.Print('%s/h_LOmaxvar_raw_ch.png'%plotDir)
+
+
 c = ROOT.TCanvas('c_LOmaxvar_ch','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
@@ -689,3 +817,5 @@ line.SetLineWidth(4)
 line.SetLineStyle(2)
 line.Draw('same')
 c.Print('%s/h_LOmaxvar_ch.png'%plotDir)
+
+
