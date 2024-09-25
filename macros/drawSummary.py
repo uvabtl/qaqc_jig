@@ -231,42 +231,50 @@ for module in modules:
     for point in range(graph.GetN()):              
         h_lyso_R_pc_per_kev_vs_bar.Fill(graph.GetPointY(point))
 
-    graph = rootfile.Get('g_spe_L_vs_bar')
+    current_data = []
+    # filling histos
+    graph = rootfile.Get('g_spe_L_vs_bar')   
+    current_data.append(GetMeanRMS(graph)[0])
     for point in range(graph.GetN()):
         h_spe_L_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_spe_R_vs_bar')
+    current_data.append(GetMeanRMS(graph)[0])
     for point in range(graph.GetN()):
         h_spe_R_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_avg_light_yield_vs_bar')
     h_LO_avg_bar.Fill(GetMeanRMS(graph)[0])
-    #print(f"Mean Value for {module} is {GetMeanRMS(graph)[0]}")
-    module_data.update({module: GetMeanRMS(graph)[0]})
+    current_data.append(GetMeanRMS(graph)[0])
     h_LOrms_bar.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_bar.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
     for point in range(graph.GetN()):
         h_LO_avg_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_light_yield_asymm_vs_bar')
+    current_data.append(GetMeanRMS(graph)[0])
     h_LO_asymm_bar.Fill(GetMeanRMS_abs(graph)[0])
     for point in range(graph.GetN()):
         h_LO_asymm_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_L_light_yield_vs_bar')
+    current_data.append(GetMeanRMS(graph)[0])
     h_LO_L_bar.Fill(GetMeanRMS(graph)[0])
     for point in range(graph.GetN()):
         h_LO_L_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_R_light_yield_vs_bar')
     h_LO_R_bar.Fill(GetMeanRMS(graph)[0])
+    current_data.append(GetMeanRMS(graph)[0])
     for point in range(graph.GetN()):
         h_LO_R_ch.Fill(graph.GetPointY(point))
 
     graph = rootfile.Get('g_light_yield_vs_ch')
+    current_data.append(GetMeanRMS(graph)[0])
     h_LOrms_ch.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_ch.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
-
+     
+    module_data.update({module: current_data})
 
 
 print(module_data)
