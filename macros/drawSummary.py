@@ -23,7 +23,7 @@ good_runs = [
     358,
     359,
     360,
-    361,
+    361
 ]
 
 modules_to_skip = [
@@ -73,12 +73,15 @@ inputFiles = glob.glob(data_path+'/run*/*_analysis.root')
 # reverse order to preferentially use later runs
 for inputFile in inputFiles[::-1]:
     tokens = inputFile.split('/')
+    ##print("tokens=",tokens) 
     run = ''
     for token in tokens:
         if 'module' in token:
             module = token[7:21] # SM ID
+          #  print ("module=", module)
         if 'run' in token:
             run = int(token[3:]) # run number
+            #print ("token=", token)
     if (run not in good_runs) or (module in modules_to_skip):
         continue
     if module in modules:
@@ -88,6 +91,7 @@ for inputFile in inputFiles[::-1]:
         print(f"Adding {module} from run {run}")
         modules.append(module)
     params[module] = [inputFile,run,'GOOD']
+    #print ("params=",params[module])
 modules.sort()
 
 if not os.path.isdir(plotDir):
