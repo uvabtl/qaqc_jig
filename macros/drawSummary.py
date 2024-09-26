@@ -14,6 +14,7 @@ import tdrstyle
 #from typing import NamedTuple
 
 
+
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
 plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_47_SMs_addUncalibrated/'
@@ -160,10 +161,15 @@ for module in modules:
     
     
     rootfile = ROOT.TFile(params[module][0],'READ')
-
+    #print('test1')
+    #print(rootfile)
+    
     # filling histos raw
-    graph = rootfile.Get('g_spe_L_raw_vs_bar')
-    print (graph)
+    print(g_spe_L_raw_vs_bar)
+    graph =ROOT.TGraph(rootfile.Get('g_spe_L_raw_vs_bar'))
+    print(type(graph))
+    
+    
     for point in range(graph.GetN()):
         h_spe_L_ch.Fill(graph.GetPointY(point))
      
