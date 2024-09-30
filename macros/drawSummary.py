@@ -111,6 +111,8 @@ h_LOrms_raw_ch = ROOT.TH1F('h_LOrms_raw_ch','',60,0.,30.)
 h_LOmaxvar_raw_bar = ROOT.TH1F('h_LOmaxvar_raw_bar','',50,0.,100.)
 h_LOmaxvar_raw_ch = ROOT.TH1F('h_LOmaxvar_raw_ch','',50,0.,100.)
 
+h_lyso_pc_per_kev_raw_vs_bar= ROOT.TH1F('h_lyso_pc_per_kev_raw_vs_bar','',100,0,5)
+
 # creating histos
 h_spe_L_ch = ROOT.TH1F('h_spe_L_ch','',100,3.,5.)
 h_spe_R_ch = ROOT.TH1F('h_spe_R_ch','',100,3.,5.)
@@ -131,7 +133,7 @@ h_LOrms_ch = ROOT.TH1F('h_LOrms_ch','',60,0.,30.)
 h_LOmaxvar_bar = ROOT.TH1F('h_LOmaxvar_bar','',50,0.,100.)
 h_LOmaxvar_ch = ROOT.TH1F('h_LOmaxvar_ch','',50,0.,100.)
 
-
+h_lyso_pc_per_kev_vs_bar= ROOT.TH1F('h_lyso_pc_per_kev_vs_bar','',100,0,5)
 # selecting the modules to be included in the summary: accept 1 if included, 0 otherwise
 for module in modules:
     param = params[module]
@@ -189,7 +191,14 @@ for module in modules:
     h_LOrms_raw_ch.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_raw_ch.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
 
-    # filling histos
+    graph = rootfile.Get('g_lyso_pc_per_kev_raw_vs_bar')
+    for point in range(graph.GetN()):              
+        h_lyso_pc_per_kev_raw_vs_bar.Fill(graph.GetPointY(point))
+    
+    graph = rootfile.Get('g_lyso_pc_per_kev_vs_bar')
+    for point in range(graph.GetN()):              
+        h_lyso_pc_per_kev_vs_bar.Fill(graph.GetPointY(point))
+
     graph = rootfile.Get('g_spe_L_vs_bar')
     for point in range(graph.GetN()):
         h_spe_L_ch.Fill(graph.GetPointY(point))
@@ -789,5 +798,65 @@ line.SetLineWidth(4)
 line.SetLineStyle(2)
 line.Draw('same')
 c.Print('%s/h_LOmaxvar_ch.png'%plotDir)
+
+
+c = ROOT.TCanvas('c_lyso_pc_per_kev_raw_vs_bar','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_lyso_pc_per_kev_raw_vs_bar.SetTitle(';single p.e. charge [pC] raw;entries')
+h_lyso_pc_per_kev_raw_vs_bar.SetFillStyle(3001)
+h_lyso_pc_per_kev_raw_vs_bar.SetFillColor(ROOT.kRed)
+h_lyso_pc_per_kev_raw_vs_bar.SetLineColor(ROOT.kRed)
+h_lyso_pc_per_kev_raw_vs_bar.GetYaxis().SetRangeUser(0.,1.1*max(h_lyso_pc_per_kev_raw_vs_bar.GetMaximum(),h_lyso_pc_per_kev_raw_vs_bar.GetMaximum()))
+h_lyso_pc_per_kev_raw_vs_bar.Draw()
+latex_L = ROOT.TLatex(0.64,0.70,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_lyso_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_pc_per_kev_raw_vs_bar.GetMean()*100.))
+latex_L.SetNDC()
+latex_L.SetTextSize(0.05)
+latex_L.SetTextColor(ROOT.kRed)
+latex_L.Draw('same')
+h_lyso_pc_per_kev_raw_vs_bar.SetFillStyle(3001)
+h_lyso_pc_per_kev_raw_vs_bar.SetFillColor(ROOT.kBlue)
+h_lyso_pc_per_kev_raw_vs_bar.SetLineColor(ROOT.kBlue)
+h_lyso_pc_per_kev_raw_vs_bar.Draw('same')
+latex_R = ROOT.TLatex(0.64,0.40,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_lyso_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_pc_per_kev_raw_vs_bar.GetMean()*100.))
+latex_R.SetNDC()
+latex_R.SetTextSize(0.05)
+latex_R.SetTextColor(ROOT.kBlue)
+latex_R.Draw('same')
+c.Print('%s/h_lyso_pc_per_kev_raw_vs_bar.png'%plotDir)
+
+
+c = ROOT.TCanvas('c_lyso_pc_per_kev_vs_bar','',800,700)
+ROOT.gPad.SetGridx()
+ROOT.gPad.SetGridy()
+h_lyso_pc_per_kev_vs_bar.SetTitle(';single p.e. charge [pC] raw;entries')
+h_lyso_pc_per_kev_vs_bar.SetFillStyle(3001)
+h_lyso_pc_per_kev_vs_bar.SetFillColor(ROOT.kRed)
+h_lyso_pc_per_kev_vs_bar.SetLineColor(ROOT.kRed)
+h_lyso_pc_per_kev_vs_bar.GetYaxis().SetRangeUser(0.,1.1*max(h_lyso_pc_per_kev_vs_bar.GetMaximum(),h_lyso_pc_per_kev_vs_bar.GetMaximum()))
+h_lyso_pc_per_kev_vs_bar.Draw()
+latex_L = ROOT.TLatex(0.64,0.70,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_lyso_pc_per_kev_vs_bar.GetMean(),h_lyso_pc_per_kev_vs_bar.GetRMS()/h_lyso_pc_per_kev_vs_bar.GetMean()*100.))
+latex_L.SetNDC()
+latex_L.SetTextSize(0.05)
+latex_L.SetTextColor(ROOT.kRed)
+latex_L.Draw('same')
+h_lyso_pc_per_kev_vs_bar.SetFillStyle(3001)
+h_lyso_pc_per_kev_vs_bar.SetFillColor(ROOT.kBlue)
+h_lyso_pc_per_kev_vs_bar.SetLineColor(ROOT.kBlue)
+h_lyso_pc_per_kev_vs_bar.Draw('same')
+latex_R = ROOT.TLatex(0.64,0.40,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_lyso_pc_per_kev_vs_bar.GetMean(),h_lyso_pc_per_kev_vs_bar.GetRMS()/h_lyso_pc_per_kev_vs_bar.GetMean()*100.))
+latex_R.SetNDC()
+latex_R.SetTextSize(0.05)
+latex_R.SetTextColor(ROOT.kBlue)
+latex_R.Draw('same')
+c.Print('%s/h_lyso_pc_per_kev_vs_bar.png'%plotDir)
+
+
+
+
+
+
+
+
 
 
