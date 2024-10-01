@@ -824,7 +824,7 @@ h_lyso_L_pc_per_kev_vs_bar.SetFillColor(ROOT.kRed)
 h_lyso_L_pc_per_kev_vs_bar.SetLineColor(ROOT.kRed)
 h_lyso_L_pc_per_kev_vs_bar.GetYaxis().SetRangeUser(0.,1.1*max(h_lyso_L_pc_per_kev_vs_bar.GetMaximum(),h_lyso_R_pc_per_kev_vs_bar.GetMaximum()))
 h_lyso_L_pc_per_kev_vs_bar.Draw()
-latex_L = ROOT.TLatex(0.64,0.70,'#splitline{Mean: %.2e}{RMS: %.1f %%}'%(h_lyso_L_pc_per_kev_vs_bar.GetMean(),h_lyso_L_pc_per_kev_vs_bar.GetRMS()/h_lyso_L_pc_per_kev_vs_bar.GetMean()*100.))
+latex_L = ROOT.TLatex(0.64,0.78,'#splitline{Left}{#splitline{Mean: %.2e}{RMS: %.1f %%}}'%(h_lyso_L_pc_per_kev_vs_bar.GetMean(),h_lyso_L_pc_per_kev_vs_bar.GetRMS()/h_lyso_L_pc_per_kev_vs_bar.GetMean()*100.))
 latex_L.SetNDC()
 latex_L.SetTextSize(0.05)
 latex_L.SetTextColor(ROOT.kRed)
@@ -833,16 +833,16 @@ h_lyso_R_pc_per_kev_vs_bar.SetFillStyle(3001)
 h_lyso_R_pc_per_kev_vs_bar.SetFillColor(ROOT.kBlue)
 h_lyso_R_pc_per_kev_vs_bar.SetLineColor(ROOT.kBlue)
 h_lyso_R_pc_per_kev_vs_bar.Draw('same')
-latex_R = ROOT.TLatex(0.64,0.40,'#splitline{Mean: %.2e}{RMS: %.1f %%}'%(h_lyso_R_pc_per_kev_vs_bar.GetMean(),h_lyso_R_pc_per_kev_vs_bar.GetRMS()/h_lyso_R_pc_per_kev_vs_bar.GetMean()*100.))
+latex_R = ROOT.TLatex(0.64,0.50,'#splitline{Right}{#splitline{Mean: %.2e}{RMS: %.1f %%}}'%(h_lyso_R_pc_per_kev_vs_bar.GetMean(),h_lyso_R_pc_per_kev_vs_bar.GetRMS()/h_lyso_R_pc_per_kev_vs_bar.GetMean()*100.))
 latex_R.SetNDC()
 latex_R.SetTextSize(0.05)
 latex_R.SetTextColor(ROOT.kBlue)
 latex_R.Draw('same')
 
-leg = ROOT.TLegend(0.2,0.8,0.3,0.9);
-leg.AddEntry("h_lyso_L_pc_per_kev_vs_bar","Left side","l");
-leg.AddEntry("h_lyso_R_pc_per_kev_vs_bar ","Right side","l");
-leg.Draw();
+#leg = ROOT.TLegend(0.2,0.8,0.3,0.9);
+#leg.AddEntry("h_lyso_L_pc_per_kev_vs_bar","Left side","l");
+#leg.AddEntry("h_lyso_R_pc_per_kev_vs_bar ","Right side","l");
+#leg.Draw();
 
 c.Print('%s/h_lyso_pc_per_kev_LR_vs_bar.png'%plotDir)
 
@@ -857,7 +857,7 @@ h_lyso_L_pc_per_kev_raw_vs_bar.SetFillColor(ROOT.kRed)
 h_lyso_L_pc_per_kev_raw_vs_bar.SetLineColor(ROOT.kRed)
 h_lyso_L_pc_per_kev_raw_vs_bar.GetYaxis().SetRangeUser(0.,1.1*max(h_lyso_L_pc_per_kev_raw_vs_bar.GetMaximum(),h_lyso_R_pc_per_kev_raw_vs_bar.GetMaximum()))
 h_lyso_L_pc_per_kev_raw_vs_bar.Draw()
-latex_L = ROOT.TLatex(0.64,0.70,'#splitline{Mean: %.2e}{RMS: %.1f %%}'%(h_lyso_L_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_L_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_L_pc_per_kev_raw_vs_bar.GetMean()*100.))
+latex_L = ROOT.TLatex(0.64,0.78,'#splitline{Left}{#splitline{Mean: %.2e}{RMS: %.1f %%}}'%(h_lyso_L_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_L_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_L_pc_per_kev_raw_vs_bar.GetMean()*100.))
 latex_L.SetNDC()
 latex_L.SetTextSize(0.05)
 latex_L.SetTextColor(ROOT.kRed)
@@ -866,15 +866,15 @@ h_lyso_R_pc_per_kev_raw_vs_bar.SetFillStyle(3001)
 h_lyso_R_pc_per_kev_raw_vs_bar.SetFillColor(ROOT.kBlue)
 h_lyso_R_pc_per_kev_raw_vs_bar.SetLineColor(ROOT.kBlue)
 h_lyso_R_pc_per_kev_raw_vs_bar.Draw('same')
-latex_R = ROOT.TLatex(0.64,0.40,'#splitline{Mean: %.2e}{RMS: %.1f %%}'%(h_lyso_R_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_R_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_R_pc_per_kev_raw_vs_bar.GetMean()*100.))
+latex_R = ROOT.TLatex(0.64,0.50,'#splitline{Right}{#splitline{Mean: %.2e}{RMS: %.1f %%}}'%(h_lyso_R_pc_per_kev_raw_vs_bar.GetMean(),h_lyso_R_pc_per_kev_raw_vs_bar.GetRMS()/h_lyso_R_pc_per_kev_raw_vs_bar.GetMean()*100.))
 latex_R.SetNDC()
 latex_R.SetTextSize(0.05)
 latex_R.SetTextColor(ROOT.kBlue)
 latex_R.Draw('same')
-leg = ROOT.TLegend(0.2,0.8,0.3,0.9);
-leg.AddEntry("h_lyso_L_pc_per_kev_raw_vs_bar","Left side","l");
-leg.AddEntry("h_lyso_R_pc_per_kev_raw_vs_bar ","Right side","l");
-leg.Draw();
+#leg = ROOT.TLegend(0.2,0.8,0.3,0.9);
+#leg.AddEntry("h_lyso_L_pc_per_kev_raw_vs_bar","Left side","l");
+#leg.AddEntry("h_lyso_R_pc_per_kev_raw_vs_bar ","Right side","l");
+#leg.Draw();
 
 c.Print('%s/h_lyso_pc_per_kev_LR_raw_vs_bar.png'%plotDir)
 
