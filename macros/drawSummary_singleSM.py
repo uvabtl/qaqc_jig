@@ -16,7 +16,7 @@ import tdrstyle
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_SM0041_calib/356to361_runs'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_SM0041_calib/356to366_runs'
 #plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_SM0041_calib/'
 
 good_runs = [
@@ -35,6 +35,8 @@ good_runs = [
     359,
     360,
     361,
+    365,
+    366,
 ]
 
 single_module = [
