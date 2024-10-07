@@ -243,6 +243,8 @@ for module in modules:
     for point in range(graph.GetN()):
         h_spe_R_ch.Fill(graph.GetPointY(point))
 
+    current_data['spe_avg'] = (current_data['spe_L_vs_bar'] + current_data['spe_R_vs_bar'])/2
+
     graph = rootfile.Get('g_avg_light_yield_vs_bar')
     h_LO_avg_bar.Fill(GetMeanRMS(graph)[0])
     current_data['avg_light_yield_vs_bar'] = GetMeanRMS(graph)[0]
@@ -277,7 +279,9 @@ for module in modules:
     module_data.update({module: current_data})
 
 
-print(module_data)
+for module,d in module_data.items():
+    print(f"module: {module} spe avg: {d['spe_avg']} ly_avg: {d['avg_light_yield_vs_bar']}")
+
 # draw histos
 print(f"Saving plots to {plotDir}")
 
