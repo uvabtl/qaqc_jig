@@ -278,9 +278,17 @@ for module in modules:
      
     module_data.update({module: current_data})
 
-
 for module,d in module_data.items():
-    print(f"module: {module} spe avg: {d['spe_avg']} ly_avg: {d['avg_light_yield_vs_bar']}")
+    message =f"module: {module}   spe avg: {d['spe_avg']:.2f}   ly_avg: {d['avg_light_yield_vs_bar']:.0f}"
+    if d['spe_avg'] < 3.85:
+        message += '  [notable avg spe-]'
+    if d['spe_avg'] > 4.15:
+        message += '  [notable avg spe+]' 
+    if d['avg_light_yield_vs_bar'] < 2700:
+        message += '  [notable avg ly-]'
+    if d['avg_light_yield_vs_bar'] > 3160:
+        message += '  [notable avg ly+]'
+    print(message)
 
 # draw histos
 print(f"Saving plots to {plotDir}")
