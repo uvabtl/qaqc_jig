@@ -825,7 +825,10 @@ def step_module(module_i, list_nstep):
    client = Client(ip_address.get())
    #Move the stepper motor to the position of the i-th module
    if stepper_enable.get():
-      if module_i>step_lastposition:
+      if int(module_i) == 0:
+         step_home()
+         return
+      elif module_i>step_lastposition:
          for j in range(step_lastposition +1, module_i+1):
             query(client, "step %i" % list_nstep[j], 60)
             step_lastposition += 1
