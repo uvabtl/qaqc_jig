@@ -22,6 +22,15 @@ good_runs = [
     359,
     360,
     361,
+    365,
+    365,
+    366,
+    368,
+    369,
+    371,
+    372,
+    373,
+    374,
 ]
 
 if BAC == "Milano":
@@ -32,7 +41,7 @@ if BAC == "Milano":
 elif BAC == "UVA":
     data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
     selections = ['GOOD']
-    plotDir = '/var/www/html/data/production/calibrationPlots_run0356-run0361_calib/'
+    plotDir = '/var/www/html/data/production/calibrationPlots_run0356-run0374_calib/'
 
 
 if not os.path.isdir(plotDir):
@@ -88,10 +97,13 @@ for inputFile in inputFiles:
     print(module,run,params[(module,run)],config)
 
 bad_modules = []
+bad_modules.append('32110020000041')
 bad_modules.append('32110020005630')
 bad_modules.append('32110020005632')
 bad_modules.append('32110020005634')
-bad_modules.append('32110020000041')
+bad_modules.append('32110020005672')
+bad_modules.append('32110020005686')
+bad_modules.append('32110020005697')
 #bad_modules.append('32110020000005')
 #bad_modules.append('32110020000009')
 #bad_modules.append('32110020000018')
@@ -137,15 +149,15 @@ for key in modules:
     
     rootfile = ROOT.TFile(params[(module,run)][0],'READ')
     
-    graph = rootfile.Get('g_spe_L_vs_bar')
+    graph = rootfile.Get('g_spe_L_raw_vs_bar')
     mean = GetMeanRMS(graph)[0]
     p_spe_L_vs_slot.Fill(slot,mean)
     
-    graph = rootfile.Get('g_spe_R_vs_bar')
+    graph = rootfile.Get('g_spe_R_raw_vs_bar')
     mean = GetMeanRMS(graph)[0]
     p_spe_R_vs_slot.Fill(slot,mean)
     
-    graph = rootfile.Get('g_spe_vs_ch')
+    graph = rootfile.Get('g_spe_raw_vs_ch')
     mean = GetMeanRMS(graph)[0]
     for point in range(graph.GetN()):
         ch = graph.GetPointX(point)
@@ -178,15 +190,15 @@ for key in modules:
     
     rootfile = ROOT.TFile(params[(module,run)][0],'READ')
     
-    graph = rootfile.Get('g_lyso_L_pc_per_kev_vs_bar')
+    graph = rootfile.Get('g_lyso_L_pc_per_kev_raw_vs_bar')
     mean = GetMeanRMS(graph)[0]
     p_lyso_L_vs_slot.Fill(slot,mean)
     
-    graph = rootfile.Get('g_lyso_R_pc_per_kev_vs_bar')
+    graph = rootfile.Get('g_lyso_R_pc_per_kev_raw_vs_bar')
     mean = GetMeanRMS(graph)[0]
     p_lyso_R_vs_slot.Fill(slot,mean)
     
-    graph = rootfile.Get('g_lyso_pc_per_kev_vs_ch')
+    graph = rootfile.Get('g_lyso_pc_per_kev_raw_vs_ch')
     mean = GetMeanRMS(graph)[0]
     for point in range(graph.GetN()):
         ch = graph.GetPointX(point)

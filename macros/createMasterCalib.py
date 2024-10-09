@@ -17,8 +17,8 @@ from typing import NamedTuple
 
 
 
-inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/calibrate.root','READ')
-inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0248-run0254_calib/calibrate.root','READ')
+inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0356-run0374_calib/calibrate.root','READ')
+inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0356-run0374_calib/calibrate.root','READ')
 
 p_spe_L_vs_slot = inputfile_vs_slot.Get('p_spe_L_vs_slot')
 p_spe_R_vs_slot = inputfile_vs_slot.Get('p_spe_R_vs_slot')
