@@ -92,6 +92,7 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     f.SetParameter(0, (peak-offset)/eng)
     f.SetParameter(1, 0.08*peak/eng)
     f.SetParameter(2, h.GetBinContent(h.FindBin(peak)))
+    f.SetParLimits(0, 0.9*(peak-offset)/eng, 1.1*(peak-offset)/eng)
     f.SetParLimits(1,0.,100.)
     r = h.Fit(f, 'QLSB0',  '', 0.9*peak, 1.1*peak)
     #h.Write()
@@ -103,6 +104,7 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     # reasons.
     
     f.SetLineColor(ROOT.kGreen)
+    f.SetParLimits(0, f.GetParameter(0) - 0.75*abs(f.GetParameter(1)), f.GetParameter(0) + 1.*abs(f.GetParameter(1)))
     r = h.Fit(f, 'QLSB+', '', offset+eng*f.GetParameter(0) - 0.75*eng*abs(f.GetParameter(1)), offset+eng*f.GetParameter(0) + 1.*eng*abs(f.GetParameter(1)))
     f.Write()
 
