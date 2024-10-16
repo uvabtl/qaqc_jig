@@ -235,23 +235,36 @@ for module in modules:
     # filling histos
     graph = rootfile.Get('g_spe_L_vs_bar')   
     current_data['spe_L_vs_bar'] = GetMeanRMS(graph)[0]
+    spe_count_L = 0
     for point in range(graph.GetN()):
         h_spe_L_ch.Fill(graph.GetPointY(point))
+        if graph.GetPointY(point) < 3.4 or graph.GetPointY(point) > 4.4:
+            spe_count_L += 1
 
     graph = rootfile.Get('g_spe_R_vs_bar')
     current_data['spe_R_vs_bar'] = GetMeanRMS(graph)[0]
+    spe_count_R = 0
     for point in range(graph.GetN()):
         h_spe_R_ch.Fill(graph.GetPointY(point))
+        if graph.GetPointY(point) < 3.4 or graph.GetPointY(point) > 4.4:
+            spe_count_R += 1
+    current_data['bad_spe'] = spe_count_R + spe_count_L
 
     current_data['spe_avg'] = (current_data['spe_L_vs_bar'] + current_data['spe_R_vs_bar'])/2
 
+    threshold = 2970 #estimate average LO
     graph = rootfile.Get('g_avg_light_yield_vs_bar')
     h_LO_avg_bar.Fill(GetMeanRMS(graph)[0])
     current_data['avg_light_yield_vs_bar'] = GetMeanRMS(graph)[0]
     h_LOrms_bar.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_bar.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
+    bar_LO_count = 0
     for point in range(graph.GetN()):
         h_LO_avg_ch.Fill(graph.GetPointY(point))
+        if graph.GetPointY(point) < threshold*0.9:
+            bar_LO_count += 1
+    current_data['bad_bar_LO'] = bar_LO_count
+
 
     graph = rootfile.Get('g_light_yield_asymm_vs_bar')
     current_data['light_yield_asymm_vs_bar'] = GetMeanRMS(graph)[0]
@@ -275,11 +288,33 @@ for module in modules:
     current_data['g_light_yield_vs_ch'] = GetMeanRMS(graph)[0]
     h_LOrms_ch.Fill(GetMeanRMS(graph)[1]/GetMeanRMS(graph)[0]*100.)
     h_LOmaxvar_ch.Fill(GetMaxVar(graph)/GetMeanRMS(graph)[0]*100.)
-     
+    ch_LO_count = 0
+    for point in range(graph.GetN()):
+        if graph.GetPointY(point) < threshold*0.85:
+            ch_LO_count += 1
+    current_data['bad_ch_LO'] = ch_LO_count
+    if ch_LO_count > 1 or bar_LO_count > 1 or spe_count_R + spe_count_L > 1:
+        class_rating = "C" 
+    elif ch_LO_count > 0 or bar_LO_count > 0 or spe_count_R + spe_count_L > 0:
+        class_rating = "B"
+    else:
+        class_rating = "A"
+    current_data['class'] = class_rating
     module_data.update({module: current_data})
 
+a_count = 0
+b_count = 0
+c_count = 0
 for module,d in module_data.items():
-    message =f"module: {module}   spe avg: {d['spe_avg']:.2f}   ly_avg: {d['avg_light_yield_vs_bar']:.0f}"
+    message =f"module: {module}   spe avg: {d['spe_avg']:.2f}   ly_avg: {d['avg_light_yield_vs_bar']:.0f}   class: {d['class']}"
+    if d['class'] == 'A':
+       a_count += 1
+    if d['class'] == 'B':
+       b_count += 1
+       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}"
+    if d['class'] == 'C':
+       c_count += 1 
+       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}"
     if d['spe_avg'] < 3.85:
         message += '  [notable avg spe-]'
     if d['spe_avg'] > 4.15:
@@ -289,6 +324,7 @@ for module,d in module_data.items():
     if d['avg_light_yield_vs_bar'] > 3160:
         message += '  [notable avg ly+]'
     print(message)
+print(f"There are {a_count} class A, {b_count} class B, and {c_count} class C modules")
 
 # draw histos
 print(f"Saving plots to {plotDir}")
