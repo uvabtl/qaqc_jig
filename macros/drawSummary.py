@@ -13,7 +13,7 @@ import tdrstyle
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_178_SMs_calib/'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_178SMs_calib/'
 
 good_runs = [
     356,
