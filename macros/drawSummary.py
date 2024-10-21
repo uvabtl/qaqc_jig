@@ -87,7 +87,7 @@ inputFiles = glob.glob(data_path+'/run*/*_analysis.root')
 # reverse order to preferentially use later runs
 for inputFile in inputFiles[::-1]:
     tokens = inputFile.split('/')
-    ##print("tokens=",tokens) 
+    ##print("tokens=",tokens)
     run = ''
     for token in tokens:
         if 'module' in token:
@@ -162,7 +162,7 @@ for module in modules:
     #if param[1] == 288:
     #    accept = 1 
     #elif param[1] > 299:
-    #    accept = 1 
+    #    accept = 1
 
     #for selection in selections:
     #    tempAccept = 0
@@ -215,7 +215,6 @@ for module in modules:
     graph = rootfile.Get('g_lyso_L_pc_per_kev_raw_vs_bar')
     for point in range(graph.GetN()):              
         h_lyso_L_pc_per_kev_raw_vs_bar.Fill(graph.GetPointY(point))
-   
 
     graph = rootfile.Get('g_lyso_R_pc_per_kev_raw_vs_bar')
     for point in range(graph.GetN()):              
@@ -226,14 +225,13 @@ for module in modules:
     for point in range(graph.GetN()):              
         h_lyso_L_pc_per_kev_vs_bar.Fill(graph.GetPointY(point))
 
- 
     graph = rootfile.Get('g_lyso_R_pc_per_kev_vs_bar')
-    for point in range(graph.GetN()):              
+    for point in range(graph.GetN()):
         h_lyso_R_pc_per_kev_vs_bar.Fill(graph.GetPointY(point))
 
     current_data = {}
     # filling histos
-    graph = rootfile.Get('g_spe_L_vs_bar')   
+    graph = rootfile.Get('g_spe_L_vs_bar')
     current_data['spe_L_vs_bar'] = GetMeanRMS(graph)[0]
     spe_count_L = 0
     for point in range(graph.GetN()):
@@ -265,7 +263,6 @@ for module in modules:
             bar_LO_count += 1
     current_data['bad_bar_LO'] = bar_LO_count
 
-
     graph = rootfile.Get('g_light_yield_asymm_vs_bar')
     current_data['light_yield_asymm_vs_bar'] = GetMeanRMS(graph)[0]
     h_LO_asymm_bar.Fill(GetMeanRMS_abs(graph)[0])
@@ -294,7 +291,7 @@ for module in modules:
             ch_LO_count += 1
     current_data['bad_ch_LO'] = ch_LO_count
     if ch_LO_count > 1 or bar_LO_count > 1 or spe_count_R + spe_count_L > 1:
-        class_rating = "C" 
+        class_rating = "C"
     elif ch_LO_count > 0 or bar_LO_count > 0 or spe_count_R + spe_count_L > 0:
         class_rating = "B"
     else:
@@ -953,10 +950,4 @@ latex_R.Draw('same')
 #leg.Draw();
 
 c.Print('%s/h_lyso_pc_per_kev_LR_raw_vs_bar.png'%plotDir)
-
-
-
-
-
-
 
