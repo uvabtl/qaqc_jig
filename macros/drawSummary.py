@@ -9,7 +9,7 @@ import sys
 import time
 import ROOT
 import tdrstyle
-
+import csv
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
@@ -231,6 +231,7 @@ for module in modules:
         h_lyso_R_pc_per_kev_vs_bar.Fill(graph.GetPointY(point))
 
     current_data = {}
+    current_data['module_number'] = module
     # filling histos
     graph = rootfile.Get('g_spe_L_vs_bar')
     current_data['spe_L_vs_bar'] = GetMeanRMS(graph)[0]
@@ -323,6 +324,14 @@ for module,d in module_data.items():
         message += '  [notable avg ly+]'
     print(message)
 print(f"There are {a_count} class A, {b_count} class B, and {c_count} class C modules")
+
+#create module summary csv
+f = open('%s/summary_csv.csv'%plotDir, 'w')
+w = csv.DictWriter(f, fieldnames=module_data[f'{list(module_data.keys())[0]}'].keys())
+w.writeheader()
+for module, d in module_data.items():
+    w.writerow(d)
+f.close()
 
 # draw histos
 print(f"Saving plots to {plotDir}")
