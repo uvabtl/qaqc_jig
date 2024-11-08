@@ -13,7 +13,7 @@ import csv
 
 data_path = '/home/qaqcbtl/qaqc_jig/data/production/'
 selections = []
-plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_190_SMs_calib/'
+plotDir = '/home/qaqcbtl/qaqc_jig/data/production/summaryPlots_238_SMs_calib/'
 
 good_runs = [
     356,
@@ -39,6 +39,11 @@ good_runs = [
     390,
     391,
     392,
+    393,
+    394,
+    395,
+    396,
+    398,
 ]
 
 modules_to_skip = [
