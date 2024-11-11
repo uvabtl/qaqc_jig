@@ -161,8 +161,8 @@ h_LOmaxvar_ch = ROOT.TH1F('h_LOmaxvar_ch','',50,0.,100.)
 h_lyso_L_pc_per_kev_vs_bar= ROOT.TH1F('h_lyso_L_pc_per_kev_vs_bar','',100,0,5)
 h_lyso_R_pc_per_kev_vs_bar= ROOT.TH1F('h_lyso_R_pc_per_kev_vs_bar','',100,0,5)
 
-h_res_avg_bar = ROOT.TH1F('h_res_avg_bar','',50,0.,0.2)
-h_res_avg_ch = ROOT.TH1F('h_res_avg_ch','',50,0.,0.2)
+h_res_avg_bar = ROOT.TH1F('h_res_avg_bar','',100,0.,20)
+h_res_avg_ch = ROOT.TH1F('h_res_avg_ch','',100,0.,20)
 
 module_data = {}
 # selecting the modules to be included in the summary: accept 1 if included, 0 otherwise
@@ -275,11 +275,11 @@ for module in modules:
     current_data['bad_bar_LO'] = bar_LO_count
 
     graph = rootfile.Get('g_avg_lyso_res_vs_bar')
-    h_res_avg_bar.Fill(GetMeanRMS(graph)[0])
+    h_res_avg_bar.Fill(100*GetMeanRMS(graph)[0])
     current_data['avg_res_vs_bar'] = GetMeanRMS(graph)[0]
     bar_res_count = 0
     for point in range(graph.GetN()):
-        h_res_avg_ch.Fill(graph.GetPointY(point))
+        h_res_avg_ch.Fill(100*graph.GetPointY(point))
         if graph.GetPointY(point) > 0.045:
             bar_res_count += 1
     current_data['bad_bar_res'] = bar_res_count
@@ -329,10 +329,10 @@ for module,d in module_data.items():
        a_count += 1
     if d['class'] == 'B':
        b_count += 1
-       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}"
+       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}  bad res: {d['bad_bar_res']}"
     if d['class'] == 'C':
        c_count += 1 
-       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}"
+       message += f"  bad spe: {d['bad_spe']}  bad bars: {d['bad_bar_LO']}  bad channels: {d['bad_ch_LO']}  bad res: {d['bad_bar_res']}"
     if d['spe_avg'] < 3.85:
         message += '  [notable avg spe-]'
     if d['spe_avg'] > 4.15:
@@ -919,7 +919,7 @@ c.Print('%s/h_LOmaxvar_ch.png'%plotDir)
 c = ROOT.TCanvas('c_res_avg_bar','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-h_res_avg_bar.SetTitle(';bar energy resolution output [pe/MeV];entries')
+h_res_avg_bar.SetTitle(';avg. peak resolution [%];entries')
 h_res_avg_bar.SetFillStyle(3001)
 h_res_avg_bar.SetFillColor(ROOT.kBlack)
 h_res_avg_bar.Draw()
@@ -927,7 +927,7 @@ latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_res_avg_
 latex.SetNDC()
 latex.SetTextSize(0.05)
 latex.Draw('same')
-line_high = ROOT.TLine(0.045,0.,0.045,1.05*h_res_avg_bar.GetMaximum())
+line_high = ROOT.TLine(4.5,0.,4.5,1.05*h_res_avg_bar.GetMaximum())
 line_high.SetLineColor(ROOT.kGreen+1)
 line_high.SetLineWidth(4)
 line_high.SetLineStyle(2)
@@ -937,7 +937,7 @@ c.Print('%s/h_res_avg_bar.png'%plotDir)
 c = ROOT.TCanvas('c_res_avg_ch','',800,700)
 ROOT.gPad.SetGridx()
 ROOT.gPad.SetGridy()
-h_res_avg_ch.SetTitle(';bar energy resolution output [pe/MeV];entries')
+h_res_avg_ch.SetTitle(';peak resolution [%];entries')
 h_res_avg_ch.SetFillStyle(3001)
 h_res_avg_ch.SetFillColor(ROOT.kBlack)
 h_res_avg_ch.Draw()
@@ -945,7 +945,7 @@ latex = ROOT.TLatex(0.64,0.60,'#splitline{mean: %.2e}{RMS: %.1f %%}'%(h_res_avg_
 latex.SetNDC()
 latex.SetTextSize(0.05)
 latex.Draw('same')
-line_high = ROOT.TLine(0.045,0.,0.045,1.05*h_res_avg_ch.GetMaximum())
+line_high = ROOT.TLine(4.5,0.,4.5,1.05*h_res_avg_ch.GetMaximum())
 line_high.SetLineColor(ROOT.kGreen+1)
 line_high.SetLineWidth(4)
 line_high.SetLineStyle(2)
