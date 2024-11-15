@@ -325,8 +325,8 @@ for module in modules:
 a_count = 0
 b_count = 0
 c_count = 0
-for module,d in module_data.items():
-    message = f"module: {module}   spe avg: {d['spe_avg']:.2f}   ly_avg: {d['avg_light_yield_vs_bar']:.0f}   class: {d['class']}"
+for module, d in module_data.items():
+    message = f"module: {module}   spe avg: {d['spe_avg']:.2f}   ly_avg: {d['avg_light_yield_vs_bar']:.0f}   res avg: {d['avg_res_vs_bar']:.3f}   class: {d['class']}"
     if d['class'] == 'A':
        a_count += 1
     if d['class'] == 'B':
