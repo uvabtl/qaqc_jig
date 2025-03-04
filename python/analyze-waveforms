@@ -26,6 +26,11 @@ ATTENUATION_FACTOR = 5.85
 #SOURCES = {'lyso': 307, 'sodium': 511, 'cesium': 662, 'cobalt': 122}
 SOURCES = {'lyso': 662, 'sodium': 511, 'cesium': 662, 'cobalt': 122}
 
+def correct_charge(old_charge):
+    if args.runNum is not None and args.runNum < 547:
+        return 1.164*old_charge - 0.1594
+    else:
+        return old_charge
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -57,6 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--channel-mask', type=lambda x: int(x,0), default=0xffffffff, help='channel mask')
     parser.add_argument('-g', '--group', type=str, default=None, help='which group to analyze')
     parser.add_argument('-s', '--slot', type=int, default=-1, help='which slot was the module in')
+    parser.add_argument('-r', '--runNum', type=int, default=None, help='run number')
     args = parser.parse_args()
 
 
