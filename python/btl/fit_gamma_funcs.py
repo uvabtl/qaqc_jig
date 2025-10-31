@@ -47,14 +47,19 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     `h`, and fits it with a Gausssian. Returns the fit parameters, with the
     first parameter being pC per keV.
     """
-    
     ## Use TSpectrum
-    nPeaks = 3
-
-    h.GetXaxis().SetRangeUser(300.,h.GetBinCenter(h.GetNbinsX()-1))
-    _ ,peak = ROOT_peaks(h,width=10,height=0.2,npeaks=nPeaks,options='nobackground')
+    nPeaks = 2
+    h.GetXaxis().SetRangeUser(300.,1600)
+    _, peak = ROOT_peaks(h,width=20 ,height=0.2, npeaks=nPeaks, options='nobackground', sort=True)
     if (peak == None): peak = 1300
     h.GetXaxis().SetRangeUser(0.,h.GetBinCenter(h.GetNbinsX()-1))
+
+    #nPeaks = 3
+
+    #h.GetXaxis().SetRangeUser(300.,h.GetBinCenter(h.GetNbinsX()-1))
+    #_ ,peak = ROOT_peaks(h,width=10,height=0.2,npeaks=nPeaks,options='nobackground')
+    #if (peak == None): peak = 1300
+    #h.GetXaxis().SetRangeUser(0.,h.GetBinCenter(h.GetNbinsX()-1))
     
     # Now we find the full energy peak. We don't use `GetMaximumBin` because we
     # want our estimate of the full energy peak to be sufficiently far away
@@ -102,11 +107,12 @@ def fit_gamma(h, eng, offset=0, offset_sigma=10):
     # sigma negative. This is not ideal, but when I tried limiting sigma to
     # positive values, ROOT had trouble fitting some histograms for unknown
     # reasons.
-    
+    print(eng) 
     f.SetLineColor(ROOT.kGreen)
     f.SetParLimits(0, f.GetParameter(0) - 0.75*abs(f.GetParameter(1)), f.GetParameter(0) + 1.*abs(f.GetParameter(1)))
     r = h.Fit(f, 'QLSB+', '', offset+eng*f.GetParameter(0) - 0.75*eng*abs(f.GetParameter(1)), offset+eng*f.GetParameter(0) + 1.*eng*abs(f.GetParameter(1)))
     f.Write()
+    print(f.GetParameter(1), f.GetParameter(0))
 
     if 'nullptr' in str(r):
        print('Fit failed, null pointer')
