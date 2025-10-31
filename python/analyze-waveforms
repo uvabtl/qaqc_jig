@@ -372,7 +372,7 @@ if __name__ == '__main__':
                 if source_fit_pars_raw is not None:
                     ch_data[channel][f'lyso_fit_pars_raw'] = source_fit_pars_raw[0]
                     ch_data[channel][f'lyso_fit_par_errors_raw'] = source_fit_pars_raw[1]
-                    ch_data[channel]['pc_per_kev_raw'] = source_fit_pars_raw[0][0]
+                    ch_data[channel]['pc_per_kev_raw'] = correct_charge(source_fit_pars_raw[0][0])
                 else:
                     ch_data[channel][f'lyso_fit_pars_raw'] = None
                     ch_data[channel][f'lyso_fit_par_errors_raw'] = None
@@ -380,7 +380,7 @@ if __name__ == '__main__':
                 if source_fit_pars is not None:
                     ch_data[channel][f'lyso_fit_pars'] = source_fit_pars[0]
                     ch_data[channel][f'lyso_fit_par_errors'] = source_fit_pars[1]
-                    ch_data[channel]['pc_per_kev'] = source_fit_pars[0][0]
+                    ch_data[channel]['pc_per_kev'] = correct_charge(source_fit_pars[0][0])
                 else:
                     ch_data[channel][f'lyso_fit_pars'] = None
                     ch_data[channel][f'lyso_fit_par_errors'] = None
@@ -402,8 +402,8 @@ if __name__ == '__main__':
             #        # ch_data[channel]['ct'][f'ch{ct_ch}'] = ch_data[f'ch{ct_ch}'][f'lyso_charge'][selection & selectionOpp] - offset
             #        ch_data[channel]['ct'][f'ch{ct_ch}'] = ch_data[f'ch{ct_ch}'][f'lyso_charge'][selection] - offset
             #        ch_data[channel]['ct_ratio'][f'ch{ct_ch}'] = ch_data[channel]['ct'][f'ch{ct_ch}'] / (event_charges - offset)
-    
-            
+
+
     ##################
     # Reviewing Data
     ##################
@@ -464,13 +464,13 @@ if __name__ == '__main__':
             g_avg_lyso_pc_per_kev_raw_vs_bar.SetPointError(g_avg_lyso_pc_per_kev_raw_vs_bar.GetN()-1,0.,source_fit_par_errors_raw[0])
         
         if source_fit_pars is not None:
-            g_avg_lyso_pc_per_kev_vs_bar.SetPoint(g_avg_lyso_pc_per_kev_vs_bar.GetN(),ch1,source_fit_pars[0])
+            g_avg_lyso_pc_per_kev_vs_bar.SetPoint(g_avg_lyso_pc_per_kev_vs_bar.GetN(),ch1,correct_charge(source_fit_pars[0]))
             g_avg_lyso_pc_per_kev_vs_bar.SetPointError(g_avg_lyso_pc_per_kev_vs_bar.GetN()-1,0.,source_fit_par_errors[0])
             
             g_avg_lyso_res_vs_bar.SetPoint(g_avg_lyso_res_vs_bar.GetN(),ch1,source_fit_pars[1]/source_fit_pars[0])
             g_avg_lyso_res_vs_bar.SetPointError(g_avg_lyso_res_vs_bar.GetN()-1,0.,source_fit_par_errors[1]/source_fit_pars[0])
             
-            g_avg_lyso_counts_vs_bar.SetPoint(g_avg_lyso_counts_vs_bar.GetN(),ch1,source_fit_pars[2])
+            g_avg_lyso_counts_vs_bar.SetPoint(g_avg_lyso_counts_vs_bar.GetN(),ch1,correct_charge(source_fit_pars[2]))
             g_avg_lyso_counts_vs_bar.SetPointError(g_avg_lyso_counts_vs_bar.GetN()-1,0.,source_fit_par_errors[2])
         
         if spe_fit_pars1_raw is not None and spe_fit_pars2_raw is not None:
@@ -491,7 +491,7 @@ if __name__ == '__main__':
             g_avg_light_yield_raw_vs_bar.SetPointError(g_avg_light_yield_raw_vs_bar.GetN()-1,0.,LY_raw*dtotal_raw)
 
         if source_fit_pars is not None and spe_fit_pars1 is not None and spe_fit_pars2 is not None:
-            LY = source_fit_pars[0]*ATTENUATION_FACTOR*1000/(0.5*(spe_fit_pars1[0]+spe_fit_pars2[0]))
+            LY = correct_charge(source_fit_pars[0])*ATTENUATION_FACTOR*1000/(0.5*(spe_fit_pars1[0]+spe_fit_pars2[0]))
             dsource = source_fit_par_errors[0]/source_fit_pars[0]
             dspe = 0.5 * np.sqrt(spe_fit_par_errors1[0]**2+spe_fit_par_errors2[0]**2)/(0.5*(spe_fit_pars1[0]+spe_fit_pars2[0]))
             dtotal = np.sqrt(dsource**2 + dspe**2)
@@ -587,32 +587,32 @@ if __name__ == '__main__':
                 g_R_lyso_pc_per_kev_raw_vs_bar.SetPointError(g_R_lyso_pc_per_kev_raw_vs_bar.GetN()-1,0.,source_fit_par_errors_raw[0])                
         
         if source_fit_pars is not None:
-            g_lyso_pc_per_kev_vs_ch.SetPoint(g_lyso_pc_per_kev_vs_ch.GetN(),ch,source_fit_pars[0])
+            g_lyso_pc_per_kev_vs_ch.SetPoint(g_lyso_pc_per_kev_vs_ch.GetN(),ch,correct_charge(source_fit_pars[0]))
             g_lyso_pc_per_kev_vs_ch.SetPointError(g_lyso_pc_per_kev_vs_ch.GetN()-1,0.,source_fit_par_errors[0])
             
             g_lyso_res_vs_ch.SetPoint(g_lyso_res_vs_ch.GetN(),ch,source_fit_pars[1]/source_fit_pars[0])
             g_lyso_res_vs_ch.SetPointError(g_lyso_res_vs_ch.GetN()-1,0.,source_fit_par_errors[1]/source_fit_pars[0])
             
-            g_lyso_counts_vs_ch.SetPoint(g_lyso_counts_vs_ch.GetN(),ch,source_fit_pars[2])
+            g_lyso_counts_vs_ch.SetPoint(g_lyso_counts_vs_ch.GetN(),ch,correct_charge(source_fit_pars[2]))
             g_lyso_counts_vs_ch.SetPointError(g_lyso_counts_vs_ch.GetN()-1,0.,source_fit_par_errors[2])
 
             if ch < 16:
-                g_L_lyso_pc_per_kev_vs_bar.SetPoint(g_L_lyso_pc_per_kev_vs_bar.GetN(),ch,source_fit_pars[0])
+                g_L_lyso_pc_per_kev_vs_bar.SetPoint(g_L_lyso_pc_per_kev_vs_bar.GetN(),ch,correct_charge(source_fit_pars[0]))
                 g_L_lyso_pc_per_kev_vs_bar.SetPointError(g_L_lyso_pc_per_kev_vs_bar.GetN()-1,0.,source_fit_par_errors[0])
                 
                 g_L_lyso_res_vs_bar.SetPoint(g_L_lyso_res_vs_bar.GetN(),ch,source_fit_pars[1]/source_fit_pars[0])
                 g_L_lyso_res_vs_bar.SetPointError(g_L_lyso_res_vs_bar.GetN()-1,0.,source_fit_par_errors[1]/source_fit_pars[0])
                 
-                g_L_lyso_counts_vs_bar.SetPoint(g_L_lyso_counts_vs_bar.GetN(),ch,source_fit_pars[2])
+                g_L_lyso_counts_vs_bar.SetPoint(g_L_lyso_counts_vs_bar.GetN(),ch,correct_charge(source_fit_pars[2]))
                 g_L_lyso_counts_vs_bar.SetPointError(g_L_lyso_counts_vs_bar.GetN()-1,0.,source_fit_par_errors[2])
             else:
-                g_R_lyso_pc_per_kev_vs_bar.SetPoint(g_R_lyso_pc_per_kev_vs_bar.GetN(),31-ch,source_fit_pars[0])
+                g_R_lyso_pc_per_kev_vs_bar.SetPoint(g_R_lyso_pc_per_kev_vs_bar.GetN(),31-ch,correct_charge(source_fit_pars[0]))
                 g_R_lyso_pc_per_kev_vs_bar.SetPointError(g_R_lyso_pc_per_kev_vs_bar.GetN()-1,0.,source_fit_par_errors[0])
                 
                 g_R_lyso_res_vs_bar.SetPoint(g_R_lyso_res_vs_bar.GetN(),31-ch,source_fit_pars[1]/source_fit_pars[0])
                 g_R_lyso_res_vs_bar.SetPointError(g_R_lyso_res_vs_bar.GetN()-1,0.,source_fit_par_errors[1]/source_fit_pars[0])
                 
-                g_R_lyso_counts_vs_bar.SetPoint(g_R_lyso_counts_vs_bar.GetN(),31-ch,source_fit_pars[2])
+                g_R_lyso_counts_vs_bar.SetPoint(g_R_lyso_counts_vs_bar.GetN(),31-ch,correct_charge(source_fit_pars[2]))
                 g_R_lyso_counts_vs_bar.SetPointError(g_R_lyso_counts_vs_bar.GetN()-1,0.,source_fit_par_errors[2])
             
         if spe_fit_pars_raw is not None:
@@ -650,7 +650,7 @@ if __name__ == '__main__':
                 g_R_light_yield_raw_vs_bar.SetPointError(g_R_light_yield_raw_vs_bar.GetN()-1,0.,LY_raw*dtotal_raw)
 
         if source_fit_pars is not None and spe_fit_pars is not None:
-            LY = source_fit_pars[0]*ATTENUATION_FACTOR*1000/spe_fit_pars[0]
+            LY = correct_charge(source_fit_pars[0])*ATTENUATION_FACTOR*1000/spe_fit_pars[0]
             dsource = source_fit_par_errors[0]/source_fit_pars[0]
             dspe = spe_fit_par_errors[0]/spe_fit_pars[0]
             dtotal = np.sqrt(dsource**2 + dspe**2)
