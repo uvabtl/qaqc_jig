@@ -17,8 +17,8 @@ from typing import NamedTuple
 
 
 
-inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0356-run0374_calib/calibrate.root','READ')
-inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production/calibrationPlots_run0356-run0374_calib/calibrate.root','READ')
+inputfile_vs_slot = ROOT.TFile('/var/www/html/data/production_copy/calibrationPlots_run0595-run0944_calib/calibrate.root','READ')
+inputfile_vs_ampli = ROOT.TFile('/var/www/html/data/production_copy/calibrationPlots_run0595-run0944_calib/calibrate.root','READ')
 
 p_spe_L_vs_slot = inputfile_vs_slot.Get('p_spe_L_vs_slot')
 p_spe_R_vs_slot = inputfile_vs_slot.Get('p_spe_R_vs_slot')
@@ -31,7 +31,7 @@ p_lyso_vs_ampli = inputfile_vs_ampli.Get('p_lyso_vs_ampli')
 
 
 
-outfile = ROOT.TFile('master_calib.root','RECREATE')
+outfile = ROOT.TFile('master_calib_595to944.root','RECREATE')
 
 g_spe = {}
 g_lyso = {}
